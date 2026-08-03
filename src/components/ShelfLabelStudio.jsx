@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Store, MapPin, DollarSign, QrCode, Tag, Award, Sparkles, Printer, Plus, Eye } from 'lucide-react';
 import BarcodeRenderer from './BarcodeRenderer';
+import SearchableProductSelect from './SearchableProductSelect';
 import { LABEL_PRESETS } from '../data/labelPresets';
 import { PRESET_LOGOS } from '../data/mockProducts';
 
@@ -74,30 +75,13 @@ export default function ShelfLabelStudio({
       {/* LEFT COLUMN: Controls (7 cols) */}
       <div className="lg:col-span-7 space-y-6">
         
-        {/* Product Selector */}
-        <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm space-y-3">
-          <div className="flex items-center justify-between">
-            <label className="text-sm font-bold text-gray-800 flex items-center gap-2">
-              <Store className="w-4 h-4 text-emerald-600" />
-              Select Item for Shelf Edge Tag
-            </label>
-            <span className="text-xs text-gray-500">{products.length} items</span>
-          </div>
-          <select
-            value={selectedProduct?.id || ''}
-            onChange={(e) => {
-              const p = products.find((x) => x.id === e.target.value);
-              if (p) handleProductSelect(p);
-            }}
-            className="w-full text-xs font-medium p-2.5 rounded-lg border border-gray-300 bg-white focus:ring-2 focus:ring-emerald-500 outline-none text-gray-800 shadow-sm"
-          >
-            {products.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.title} - ${p.price.toFixed(2)} ({p.location})
-              </option>
-            ))}
-          </select>
-        </div>
+        {/* Searchable Product Picker */}
+        <SearchableProductSelect
+          products={products}
+          selectedProduct={selectedProduct}
+          onSelectProduct={handleProductSelect}
+          label="Select Item for Shelf Edge Tag"
+        />
 
         {/* Shelf Tag Presets */}
         <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm space-y-3">

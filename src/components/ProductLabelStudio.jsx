@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Tag, Sliders, CheckCircle2, ShieldCheck, Printer, Eye, Palette, Layers, Plus } from 'lucide-react';
 import LogoUploader from './LogoUploader';
 import BarcodeRenderer from './BarcodeRenderer';
+import SearchableProductSelect from './SearchableProductSelect';
 import { LABEL_PRESETS } from '../data/labelPresets';
 import { PRESET_LOGOS } from '../data/mockProducts';
 
@@ -87,30 +88,13 @@ export default function ProductLabelStudio({
       {/* LEFT COLUMN: Controls & Designer Panel (7 cols) */}
       <div className="lg:col-span-7 space-y-6">
         
-        {/* Product Selector */}
-        <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm space-y-3">
-          <div className="flex items-center justify-between">
-            <label className="text-sm font-bold text-gray-800 flex items-center gap-2">
-              <Tag className="w-4 h-4 text-emerald-600" />
-              1. Select Product from Catalog
-            </label>
-            <span className="text-xs text-gray-500">{products.length} products loaded</span>
-          </div>
-          <select
-            value={selectedProduct?.id || ''}
-            onChange={(e) => {
-              const p = products.find((x) => x.id === e.target.value);
-              if (p) handleProductSelect(p);
-            }}
-            className="w-full text-xs font-medium p-2.5 rounded-lg border border-gray-300 bg-white focus:ring-2 focus:ring-emerald-500 outline-none text-gray-800 shadow-sm"
-          >
-            {products.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.title} ({p.variant}) - ${p.price.toFixed(2)}
-              </option>
-            ))}
-          </select>
-        </div>
+        {/* Product Selector with Live Autocomplete Search */}
+        <SearchableProductSelect
+          products={products}
+          selectedProduct={selectedProduct}
+          onSelectProduct={handleProductSelect}
+          label="1. Select Product from Catalog"
+        />
 
         {/* Preset Label Stock Picker */}
         <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm space-y-3">
