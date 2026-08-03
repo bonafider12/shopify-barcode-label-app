@@ -1,12 +1,13 @@
 import React from 'react';
-import { Tag, Store, Layers, ShoppingBag, Printer, Globe } from 'lucide-react';
+import { Tag, Store, Layers, ShoppingBag, Printer, Globe, Lock } from 'lucide-react';
 
 export default function Navbar({
   activeTab,
   setActiveTab,
   selectedProductsCount = 0,
   onOpenPrintModal,
-  onOpenShopifyConnectModal
+  onOpenShopifyConnectModal,
+  onLockApp
 }) {
   return (
     <header className="bg-slate-900 text-white border-b border-slate-800 sticky top-0 z-30 shadow-md">
@@ -73,14 +74,22 @@ export default function Navbar({
             </button>
           </nav>
 
-          {/* Connect Shopify Store & Print Actions */}
-          <div className="flex items-center gap-2.5">
+          {/* Actions: Connect Shopify, Lock App, Print Queue */}
+          <div className="flex items-center gap-2">
             <button
               onClick={onOpenShopifyConnectModal}
-              className="bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-slate-700 font-bold text-xs px-3.5 py-2 rounded-lg flex items-center gap-1.5 transition-all"
+              className="bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-slate-700 font-bold text-xs px-3 py-2 rounded-lg flex items-center gap-1.5 transition-all"
             >
               <Globe className="w-3.5 h-3.5" />
-              Connect Shopify / Vercel
+              Shopify / Vercel
+            </button>
+
+            <button
+              onClick={onLockApp}
+              title="Lock App Session"
+              className="bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 font-semibold text-xs p-2 rounded-lg flex items-center gap-1 transition-all"
+            >
+              <Lock className="w-3.5 h-3.5 text-slate-400" />
             </button>
 
             <button

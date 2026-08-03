@@ -1,5 +1,53 @@
 export const LABEL_PRESETS = [
   {
+    id: "brother_dk_1247",
+    name: "Brother DK-1247 (Large Box & Packaging 4\" x 6\")",
+    type: "THERMAL",
+    category: "Product Packaging",
+    dimensions: "4.0\" x 6.0\"",
+    widthMm: 101.6,
+    heightMm: 152.4,
+    labelsPerPage: 1,
+    paperSize: "ROLL",
+    description: "Brother QL continuous roll format for large retail packaging boxes & shipping labels."
+  },
+  {
+    id: "brother_dk_1201",
+    name: "Brother DK-1201 (Standard Barcode 1.1\" x 3.5\")",
+    type: "THERMAL",
+    category: "Product Packaging",
+    dimensions: "1.1\" x 3.5\"",
+    widthMm: 29.0,
+    heightMm: 90.0,
+    labelsPerPage: 1,
+    paperSize: "ROLL",
+    description: "Standard Brother QL continuous label for products & SKU barcodes."
+  },
+  {
+    id: "brother_dk_1202",
+    name: "Brother DK-1202 (Shipping / Retail 2.4\" x 3.9\")",
+    type: "THERMAL",
+    category: "Product Packaging",
+    dimensions: "2.4\" x 3.9\"",
+    widthMm: 62.0,
+    heightMm: 100.0,
+    labelsPerPage: 1,
+    paperSize: "ROLL",
+    description: "Medium Brother QL thermal label format for retail containers & pouches."
+  },
+  {
+    id: "brother_dk_1209",
+    name: "Brother DK-1209 (Small Barcode Tag 1.1\" x 2.4\")",
+    type: "THERMAL",
+    category: "Product Packaging",
+    dimensions: "1.1\" x 2.4\"",
+    widthMm: 29.0,
+    heightMm: 62.0,
+    labelsPerPage: 1,
+    paperSize: "ROLL",
+    description: "Compact Brother QL barcode tag for small cosmetics, jewelry & bottle labels."
+  },
+  {
     id: "avery_5160",
     name: "Avery 5160 (Standard Address / Product)",
     type: "SHEET",

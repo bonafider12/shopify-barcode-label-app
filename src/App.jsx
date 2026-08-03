@@ -1,14 +1,23 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Navbar from './components/Navbar';
 import ProductLabelStudio from './components/ProductLabelStudio';
 import ShelfLabelStudio from './components/ShelfLabelStudio';
 import CatalogManager from './components/CatalogManager';
 import PrintPreviewModal from './components/PrintPreviewModal';
 import ShopifyConnectModal from './components/ShopifyConnectModal';
+import PasswordAuthLock from './components/PasswordAuthLock';
 import { MOCK_PRODUCTS, PRESET_LOGOS } from './data/mockProducts';
-import { CheckCircle2, Printer, Sparkles, Globe } from 'lucide-react';
+import { CheckCircle2, Printer, Sparkles, Globe, Lock } from 'lucide-react';
 
 export default function App() {
+  // Password Protection Auth State
+  const [isUnlocked, setIsUnlocked] = useState(() => {
+    return sessionStorage.getItem('app_unlocked') === 'true';
+  });
+  const [storedPasscode, setStoredPasscode] = useState(() => {
+    return localStorage.getItem('app_passcode') || 'admin123';
+  });
+
   const [activeTab, setActiveTab] = useState('product'); // 'product' | 'shelf' | 'catalog'
   const [products, setProducts] = useState(MOCK_PRODUCTS);
   const [selectedProduct, setSelectedProduct] = useState(MOCK_PRODUCTS[0]);
@@ -34,6 +43,24 @@ export default function App() {
       quantity: 10
     }
   ]);
+
+  const handleUnlockSuccess = () => {
+    setIsUnlocked(true);
+    sessionStorage.setItem('app_unlocked', 'true');
+    showToast('App workspace unlocked successfully!');
+  };
+
+  const handleLockApp = () => {
+    setIsUnlocked(false);
+    sessionStorage.removeItem('app_unlocked');
+    showToast('App workspace locked.');
+  };
+
+  const handleUpdatePasscode = (newPass) => {
+    setStoredPasscode(newPass);
+    localStorage.setItem('app_passcode', newPass);
+    showToast('Master passcode updated!');
+  };
 
   const showToast = (msg) => {
     setToastMessage(msg);
@@ -90,6 +117,18 @@ export default function App() {
     setActiveTab('product');
   };
 
+  // If locked, render Password Lock Overlay Screen
+  if (!isUnlocked) {
+    return (
+      <PasswordAuthLock
+        isUnlocked={isUnlocked}
+        onUnlockSuccess={handleUnlockSuccess}
+        storedPasscode={storedPasscode}
+        onUpdatePasscode={handleUpdatePasscode}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen flex flex-col bg-slate-100/70 text-slate-900 font-sans">
       
@@ -100,6 +139,7 @@ export default function App() {
         selectedProductsCount={printQueue.length}
         onOpenPrintModal={() => setIsPrintModalOpen(true)}
         onOpenShopifyConnectModal={() => setIsShopifyModalOpen(true)}
+        onLockApp={handleLockApp}
       />
 
       {/* Main Workspace Container */}
@@ -207,8 +247,14 @@ export default function App() {
       />
 
       {/* Footer */}
-      <footer className="bg-white border-t border-gray-200 py-4 text-center text-xs text-gray-500">
-        Shopify Barcode & Retail Packaging Label Generator App • Powered by Vector SVG Barcode Engine
+      <footer className="bg-white border-t border-gray-200 py-4 text-center text-xs text-gray-500 flex items-center justify-center gap-2">
+        <span>Shopify Barcode & Retail Packaging Label Generator App • Powered by Vector SVG Barcode Engine</span>
+        <button
+          onClick={handleLockApp}
+          className="text-slate-400 hover:text-slate-700 underline font-medium ml-2"
+        >
+          Lock App
+        </button>
       </footer>
 
     </div>
