@@ -1,4 +1,4 @@
-// Utility to interact with Shopify API via Serverless/Vite Proxy
+// Utility to interact with Shopify API with 250 limit & fallback SKU/barcode handling
 
 export async function fetchShopifyProducts(storeDomain, accessToken, clientId, clientSecret) {
   let cleanDomain = (storeDomain || 'midwestturftech.myshopify.com')
@@ -41,38 +41,69 @@ export async function fetchShopifyProducts(storeDomain, accessToken, clientId, c
   }
 
   const rawProducts = resData.data?.products?.nodes || [];
-  if (rawProducts.length === 0 && resData.data) {
-    console.log('Shopify returned empty products list:', resData);
-  }
-
   const formattedProducts = [];
+
+  let autoSkuCounter = 1001;
 
   rawProducts.forEach((prod) => {
     const image = prod.featuredImage?.url || null;
-    prod.variants.nodes.forEach((variant) => {
-      const priceVal = typeof variant.price === 'object' ? variant.price?.amount : variant.price;
-      const compareVal = typeof variant.compareAtPrice === 'object' ? variant.compareAtPrice?.amount : variant.compareAtPrice;
+    const variants = prod.variants?.nodes || [];
 
-      const numPrice = parseFloat(priceVal) || 0;
-      const numCompare = compareVal ? parseFloat(compareVal) : null;
-
+    if (variants.length === 0) {
+      // If product has no explicit variants object, create standard product entry
       formattedProducts.push({
-        id: variant.id,
-        title: prod.title,
-        variant: variant.title !== 'Default Title' ? variant.title : 'Standard',
-        sku: variant.sku || `SKU-${Math.floor(1000 + Math.random() * 9000)}`,
-        barcode: variant.barcode || `${Math.floor(100000000000 + Math.random() * 900000000000)}`,
+        id: prod.id || `prod_${autoSkuCounter}`,
+        title: prod.title || 'Untitled Product',
+        variant: 'Standard',
+        sku: `SKU-MWT-${autoSkuCounter}`,
+        barcode: `${Math.floor(100000000000 + autoSkuCounter * 987654)}`,
         barcodeType: 'CODE128',
-        price: numPrice,
-        compareAtPrice: numCompare,
-        unitPrice: `$${numPrice} / ea`,
+        price: 0,
+        compareAtPrice: null,
+        unitPrice: `$0.00 / ea`,
         vendor: prod.vendor || 'Midwest Turf Tech',
         category: prod.productType || 'Turf Equipment',
         origin: 'Made in USA',
         location: 'Aisle 1 • Shelf A',
         image: image
       });
-    });
+      autoSkuCounter++;
+    } else {
+      variants.forEach((variant) => {
+        const priceVal = typeof variant.price === 'object' ? variant.price?.amount : variant.price;
+        const compareVal = typeof variant.compareAtPrice === 'object' ? variant.compareAtPrice?.amount : variant.compareAtPrice;
+
+        const numPrice = parseFloat(priceVal) || 0;
+        const numCompare = compareVal ? parseFloat(compareVal) : null;
+
+        // Auto-assign SKU if missing or empty string
+        const finalSku = variant.sku && variant.sku.trim() !== ''
+          ? variant.sku.trim()
+          : `SKU-MWT-${autoSkuCounter++}`;
+
+        // Auto-assign Barcode if missing or empty string
+        const finalBarcode = variant.barcode && variant.barcode.trim() !== ''
+          ? variant.barcode.trim()
+          : `${Math.floor(100000000000 + Math.random() * 900000000000)}`;
+
+        formattedProducts.push({
+          id: variant.id || `var_${autoSkuCounter}`,
+          title: prod.title || 'Untitled Product',
+          variant: variant.title !== 'Default Title' ? variant.title : 'Standard',
+          sku: finalSku,
+          barcode: finalBarcode,
+          barcodeType: 'CODE128',
+          price: numPrice,
+          compareAtPrice: numCompare,
+          unitPrice: `$${numPrice.toFixed(2)} / ea`,
+          vendor: prod.vendor || 'Midwest Turf Tech',
+          category: prod.productType || 'Turf Equipment',
+          origin: 'Made in USA',
+          location: 'Aisle 1 • Shelf A',
+          image: image
+        });
+      });
+    }
   });
 
   return formattedProducts;

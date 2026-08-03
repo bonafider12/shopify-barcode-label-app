@@ -1,8 +1,7 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
-// Custom Vite plugin implementing official Shopify OAuth Client Credentials Token Exchange
-// https://shopify.dev/docs/apps/build/authentication-authorization/client-secrets
+// Custom Vite plugin implementing official Shopify OAuth Client Credentials Token Exchange & 250 products limit
 function shopifyDevApiProxy() {
   return {
     name: 'shopify-dev-api-proxy',
@@ -54,9 +53,6 @@ function shopifyDevApiProxy() {
                   if (tokenData.access_token) {
                     finalAccessToken = tokenData.access_token;
                   }
-                } else {
-                  const errText = await tokenRes.text();
-                  console.warn('Local OAuth Exchange Notice HTTP', tokenRes.status, errText);
                 }
               } catch (oauthErr) {
                 console.warn('OAuth Exchange exception:', oauthErr);
@@ -75,17 +71,18 @@ function shopifyDevApiProxy() {
               headers['X-Shopify-Access-Token'] = finalAccessToken;
             }
 
+            // Increased fetch limit to 250 products & 25 variants
             const query = isStorefront
               ? `
                 query getProducts {
-                  products(first: 50) {
+                  products(first: 250) {
                     nodes {
                       id
                       title
                       vendor
                       productType
                       featuredImage { url }
-                      variants(first: 10) {
+                      variants(first: 25) {
                         nodes {
                           id
                           title
@@ -101,14 +98,14 @@ function shopifyDevApiProxy() {
               `
               : `
                 query getProducts {
-                  products(first: 50) {
+                  products(first: 250) {
                     nodes {
                       id
                       title
                       vendor
                       productType
                       featuredImage { url }
-                      variants(first: 10) {
+                      variants(first: 25) {
                         nodes {
                           id
                           title

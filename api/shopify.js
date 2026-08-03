@@ -1,5 +1,5 @@
-// Vercel Serverless API Proxy for Shopify using official Client Credentials OAuth Token Exchange
-// Implements https://shopify.dev/docs/apps/build/authentication-authorization/client-secrets
+// Vercel Serverless API Proxy for Shopify Admin & Storefront GraphQL API
+// Increased limit to 250 products per page and comprehensive variant mapping
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Credentials', true);
@@ -36,7 +36,7 @@ export default async function handler(req, res) {
 
   let finalAccessToken = effectiveSecret;
 
-  // If Client Secret (shpss_...) or Client ID is provided, execute official Shopify OAuth Token Exchange
+  // Execute Official Shopify OAuth Token Exchange if Client Secret shpss_ is provided
   if (effectiveSecret.startsWith('shpss_') || (effectiveClientId && !effectiveSecret.startsWith('shpat_'))) {
     try {
       const oauthUrl = `https://${cleanDomain}/admin/oauth/access_token`;
@@ -57,12 +57,9 @@ export default async function handler(req, res) {
         if (tokenData.access_token) {
           finalAccessToken = tokenData.access_token;
         }
-      } else {
-        const errText = await tokenRes.text();
-        console.warn('OAuth Exchange notice:', shopifyResStatus(tokenRes.status), errText);
       }
     } catch (e) {
-      console.warn('OAuth Token exchange error, proceeding with direct token...', e);
+      console.warn('OAuth Token exchange warning:', e);
     }
   }
 
@@ -81,17 +78,18 @@ export default async function handler(req, res) {
     headers['X-Shopify-Access-Token'] = finalAccessToken;
   }
 
+  // Increased fetch limit to 250 products & up to 25 variants per product
   const query = isStorefront
     ? `
       query getProducts {
-        products(first: 50) {
+        products(first: 250) {
           nodes {
             id
             title
             vendor
             productType
             featuredImage { url }
-            variants(first: 10) {
+            variants(first: 25) {
               nodes {
                 id
                 title
@@ -107,14 +105,14 @@ export default async function handler(req, res) {
     `
     : `
       query getProducts {
-        products(first: 50) {
+        products(first: 250) {
           nodes {
             id
             title
             vendor
             productType
             featuredImage { url }
-            variants(first: 10) {
+            variants(first: 25) {
               nodes {
                 id
                 title
@@ -149,8 +147,4 @@ export default async function handler(req, res) {
     console.error('Serverless Proxy Error:', err);
     return res.status(500).json({ error: err.message || 'Internal Server Error querying Shopify' });
   }
-}
-
-function shopifyResStatus(status) {
-  return `HTTP ${status}`;
 }
