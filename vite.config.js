@@ -40,38 +40,60 @@ function shopifyDevApiProxy() {
             const headers = { 'Content-Type': 'application/json' };
             if (isStorefront) {
               headers['X-Shopify-Storefront-Access-Token'] = effectiveToken;
-            } else if (isAppSecret) {
+            } else {
               headers['X-Shopify-Access-Token'] = effectiveToken;
               if (effectiveClientId) {
                 headers['X-Shopify-Client-Id'] = effectiveClientId;
               }
-            } else {
-              headers['X-Shopify-Access-Token'] = effectiveToken;
             }
 
-            const query = `
-              query getProducts {
-                products(first: 50) {
-                  nodes {
-                    id
-                    title
-                    vendor
-                    productType
-                    featuredImage { url }
-                    variants(first: 10) {
-                      nodes {
-                        id
-                        title
-                        price
-                        compareAtPrice
-                        sku
-                        barcode
+            const query = isStorefront
+              ? `
+                query getProducts {
+                  products(first: 50) {
+                    nodes {
+                      id
+                      title
+                      vendor
+                      productType
+                      featuredImage { url }
+                      variants(first: 10) {
+                        nodes {
+                          id
+                          title
+                          price { amount }
+                          compareAtPrice { amount }
+                          sku
+                          barcode
+                        }
                       }
                     }
                   }
                 }
-              }
-            `;
+              `
+              : `
+                query getProducts {
+                  products(first: 50) {
+                    nodes {
+                      id
+                      title
+                      vendor
+                      productType
+                      featuredImage { url }
+                      variants(first: 10) {
+                        nodes {
+                          id
+                          title
+                          price
+                          compareAtPrice
+                          sku
+                          barcode
+                        }
+                      }
+                    }
+                  }
+                }
+              `;
 
             const shopifyRes = await fetch(endpoint, {
               method: 'POST',
@@ -80,8 +102,29 @@ function shopifyDevApiProxy() {
             });
 
             const data = await shopifyRes.json();
+
             res.setHeader('Content-Type', 'application/json');
-            res.statusCode = shopifyRes.status;
+            if (!shopifyRes.ok) {
+              if (shopifyRes.status === 401 && isAppSecret) {
+                res.statusCode = 401;
+                res.end(
+                  JSON.stringify({
+                    error:
+                      'Shopify HTTP 401 Unauthorized: "shpss_..." is your Partner Client Secret. Shopify requires an Admin API Access Token starting with "shpat_..." (from Dev Dashboard > Install App) or a Storefront Access Token ("shpka_...").'
+                  })
+                );
+                return;
+              }
+              res.statusCode = shopifyRes.status;
+              res.end(
+                JSON.stringify({
+                  error: `Shopify returned HTTP ${shopifyRes.status}: ${JSON.stringify(data)}`
+                })
+              );
+              return;
+            }
+
+            res.statusCode = 200;
             res.end(JSON.stringify(data));
           } catch (err) {
             console.error('Local Vite Proxy Error:', err);

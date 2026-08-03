@@ -1,4 +1,4 @@
-// Utility to interact with Shopify using Client Credentials (Client ID & Secret) or Tokens
+// Utility to interact with Shopify API via Serverless/Vite Proxy
 
 export async function fetchShopifyProducts(storeDomain, accessToken, clientId, clientSecret) {
   let cleanDomain = (storeDomain || 'midwestturftech.myshopify.com')
@@ -12,87 +12,39 @@ export async function fetchShopifyProducts(storeDomain, accessToken, clientId, c
   const effectiveSecret = clientSecret || accessToken || '';
   const effectiveClientId = clientId || '';
 
-  let response;
-  let data;
+  const response = await fetch('/api/shopify', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      storeDomain: cleanDomain,
+      accessToken: effectiveSecret,
+      clientId: effectiveClientId,
+      clientSecret: effectiveSecret
+    })
+  });
 
-  try {
-    response = await fetch('/api/shopify', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        storeDomain: cleanDomain,
-        accessToken: effectiveSecret,
-        clientId: effectiveClientId,
-        clientSecret: effectiveSecret
-      })
-    });
+  const resData = await response.json();
 
-    if (response.ok) {
-      data = await response.json();
-    } else {
-      const errRes = await response.json();
-      throw new Error(errRes.error || `HTTP ${response.status}`);
-    }
-  } catch (e) {
-    console.warn('Proxy endpoint error, trying direct fetch fallback...', e);
+  if (!response.ok) {
+    throw new Error(resData.error || `Shopify Proxy Error (HTTP ${response.status})`);
   }
 
-  // Direct fetch fallback if local dev
-  if (!data) {
-    const endpoint = `https://${cleanDomain}/admin/api/2024-07/graphql.json`;
-    const query = `
-      query getProducts {
-        products(first: 50) {
-          nodes {
-            id
-            title
-            vendor
-            productType
-            featuredImage { url }
-            variants(first: 10) {
-              nodes {
-                id
-                title
-                price
-                compareAtPrice
-                sku
-                barcode
-              }
-            }
-          }
-        }
-      }
-    `;
-
-    try {
-      response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Shopify-Access-Token': effectiveSecret,
-          'X-Shopify-Client-Id': effectiveClientId
-        },
-        body: JSON.stringify({ query })
-      });
-
-      if (!response.ok) {
-        throw new Error(`Shopify API error HTTP ${response.status}`);
-      }
-      data = await response.json();
-    } catch (err) {
-      throw new Error(
-        'Browser CORS blocked direct request. Deploy to Vercel (where our /api/shopify serverless proxy handles it automatically) or use the Shopify CSV Import tab!'
-      );
-    }
+  if (resData.errors) {
+    const errText = Array.isArray(resData.errors)
+      ? resData.errors.map((e) => e.message || e).join(', ')
+      : typeof resData.errors === 'string'
+      ? resData.errors
+      : 'Shopify GraphQL query error';
+    throw new Error(`Shopify API Error: ${errText}`);
   }
 
-  if (data.errors) {
-    throw new Error(data.errors[0]?.message || 'Shopify query error');
+  const rawProducts = resData.data?.products?.nodes || [];
+  if (rawProducts.length === 0 && resData.data) {
+    console.log('Shopify returned empty products list:', resData);
   }
 
-  const rawProducts = data.data?.products?.nodes || [];
   const formattedProducts = [];
 
   rawProducts.forEach((prod) => {

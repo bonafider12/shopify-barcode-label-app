@@ -1,5 +1,4 @@
-// Vercel Serverless API Proxy for Shopify
-// Supports Client ID & Client Secret (shpss_...), Admin Access Tokens (shpat_...), and Storefront Tokens (shpka_...)
+// Vercel Serverless API Proxy for Shopify Admin & Storefront GraphQL API
 
 export default async function handler(req, res) {
   // Enable CORS headers
@@ -48,13 +47,11 @@ export default async function handler(req, res) {
 
   if (isStorefront) {
     headers['X-Shopify-Storefront-Access-Token'] = effectiveToken;
-  } else if (isAppSecret) {
+  } else {
     headers['X-Shopify-Access-Token'] = effectiveToken;
     if (effectiveClientId) {
       headers['X-Shopify-Client-Id'] = effectiveClientId;
     }
-  } else {
-    headers['X-Shopify-Access-Token'] = effectiveToken;
   }
 
   const query = isStorefront
@@ -114,6 +111,12 @@ export default async function handler(req, res) {
 
     if (!shopifyRes.ok) {
       const errorText = await shopifyRes.text();
+      if (shopifyRes.status === 401 && isAppSecret) {
+        return res.status(401).json({
+          error:
+            'Shopify 401 Unauthorized: "shpss_..." is a Partner Client Secret. Shopify requires an Admin API Access Token starting with "shpat_..." (from Dev Dashboard > Install App) or a Storefront Access Token ("shpka_...").'
+        });
+      }
       return res.status(shopifyRes.status).json({
         error: `Shopify responded with HTTP ${shopifyRes.status}: ${errorText}`
       });
