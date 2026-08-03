@@ -37,12 +37,26 @@ export default function App() {
 
   const showToast = (msg) => {
     setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 4000);
+    setTimeout(() => setToastMessage(null), 3500);
   };
 
   const handleAddToPrintQueue = (labelItem) => {
     setPrintQueue((prev) => [...prev, labelItem]);
     showToast(`Added label (${labelItem.quantity || 1} copies) to Print Queue!`);
+  };
+
+  const handleRemoveItemFromQueue = (indexToRemove) => {
+    setPrintQueue((prev) => prev.filter((_, idx) => idx !== indexToRemove));
+    showToast('Removed label design from Print Queue.');
+  };
+
+  const handleDeleteProduct = (productId) => {
+    setProducts((prev) => prev.filter((p) => p.id !== productId));
+    if (selectedProduct?.id === productId) {
+      const remaining = products.filter((p) => p.id !== productId);
+      if (remaining.length > 0) setSelectedProduct(remaining[0]);
+    }
+    showToast('Product deleted from inventory catalog.');
   };
 
   const handleBatchAddToQueue = (items) => {
@@ -161,6 +175,7 @@ export default function App() {
             setProducts={setProducts}
             onBatchAddToQueue={handleBatchAddToQueue}
             onSelectProductForEdit={handleSelectProductForEdit}
+            onDeleteProduct={handleDeleteProduct}
           />
         )}
 
@@ -188,6 +203,7 @@ export default function App() {
         onClose={() => setIsPrintModalOpen(false)}
         printQueue={printQueue}
         onClearQueue={() => setPrintQueue([])}
+        onRemoveItemFromQueue={handleRemoveItemFromQueue}
       />
 
       {/* Footer */}

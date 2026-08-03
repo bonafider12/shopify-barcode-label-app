@@ -5,7 +5,8 @@ export default function CatalogManager({
   products,
   setProducts,
   onBatchAddToQueue,
-  onSelectProductForEdit
+  onSelectProductForEdit,
+  onDeleteProduct
 }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('ALL');
@@ -251,12 +252,22 @@ export default function CatalogManager({
                     </td>
 
                     <td className="p-4 text-right">
-                      <button
-                        onClick={() => onSelectProductForEdit(p)}
-                        className="text-xs text-emerald-600 hover:text-emerald-700 font-semibold px-2.5 py-1 rounded-lg border border-emerald-200 hover:bg-emerald-50 transition-colors"
-                      >
-                        Customize Label
-                      </button>
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => onSelectProductForEdit(p)}
+                          className="text-xs text-emerald-600 hover:text-emerald-700 font-semibold px-2.5 py-1 rounded-lg border border-emerald-200 hover:bg-emerald-50 transition-colors"
+                        >
+                          Customize
+                        </button>
+
+                        <button
+                          onClick={() => onDeleteProduct(p.id)}
+                          title="Delete Product from Catalog"
+                          className="text-gray-400 hover:text-rose-600 p-1.5 rounded-lg border border-gray-200 hover:border-rose-200 hover:bg-rose-50 transition-colors"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );

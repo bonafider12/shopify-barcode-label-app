@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Printer, X, LayoutGrid, RotateCcw, Check, SlidersHorizontal, Settings2 } from 'lucide-react';
+import { Printer, X, LayoutGrid, RotateCcw, Check, Trash2 } from 'lucide-react';
 import BarcodeRenderer from './BarcodeRenderer';
 import { LABEL_PRESETS } from '../data/labelPresets';
 import { PRESET_LOGOS } from '../data/mockProducts';
@@ -8,7 +8,8 @@ export default function PrintPreviewModal({
   isOpen,
   onClose,
   printQueue = [],
-  onClearQueue
+  onClearQueue,
+  onRemoveItemFromQueue
 }) {
   const [selectedPreset, setSelectedPreset] = useState(LABEL_PRESETS[0]);
   const [copiesMultiplier, setCopiesMultiplier] = useState(1);
@@ -18,10 +19,10 @@ export default function PrintPreviewModal({
 
   // Flatten print queue items according to requested quantity
   const flattenedQueue = [];
-  printQueue.forEach((item) => {
+  printQueue.forEach((item, originalIndex) => {
     const qty = (item.quantity || 1) * copiesMultiplier;
     for (let i = 0; i < qty; i++) {
-      flattenedQueue.push(item);
+      flattenedQueue.push({ ...item, originalIndex });
     }
   });
 
@@ -57,18 +58,21 @@ export default function PrintPreviewModal({
             <div>
               <h2 className="font-bold text-base text-white">Print Preview & Sheet Layout Engine</h2>
               <p className="text-xs text-slate-400">
-                {flattenedQueue.length} labels queued ({selectedPreset.name})
+                {flattenedQueue.length} labels queued ({printQueue.length} distinct item designs)
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
-            <button
-              onClick={onClearQueue}
-              className="text-xs text-slate-400 hover:text-rose-400 px-3 py-1.5 rounded-lg border border-slate-700 transition-colors"
-            >
-              Clear Queue
-            </button>
+            {printQueue.length > 0 && (
+              <button
+                onClick={onClearQueue}
+                className="text-xs text-rose-300 hover:text-white hover:bg-rose-950/50 px-3 py-1.5 rounded-lg border border-rose-800/60 flex items-center gap-1.5 transition-colors"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                Clear Entire Queue
+              </button>
+            )}
             <button
               onClick={onClose}
               className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-colors"
@@ -81,7 +85,7 @@ export default function PrintPreviewModal({
         {/* Body: Sidebar controls + Live Sheet Grid Preview */}
         <div className="grid grid-cols-1 md:grid-cols-12 flex-1 overflow-hidden">
           
-          {/* Controls Sidebar (4 cols) */}
+          {/* Controls & Queue Items List Sidebar (4 cols) */}
           <div className="md:col-span-4 bg-gray-50/80 p-5 border-r border-gray-200 space-y-5 overflow-y-auto">
             
             {/* Label Preset Picker */}
@@ -123,6 +127,46 @@ export default function PrintPreviewModal({
               </div>
             </div>
 
+            {/* Manage Queued Items List with Delete Buttons */}
+            <div className="space-y-2 pt-2 border-t border-gray-200">
+              <label className="text-xs font-bold text-gray-800 flex items-center justify-between">
+                <span>Queued Label Items ({printQueue.length})</span>
+                <span className="text-[10px] text-gray-400">Click 🗑️ to delete item</span>
+              </label>
+
+              {printQueue.length === 0 ? (
+                <div className="p-4 bg-white rounded-xl border border-dashed border-gray-300 text-center text-xs text-gray-400">
+                  No labels in print queue.
+                </div>
+              ) : (
+                <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                  {printQueue.map((item, idx) => (
+                    <div
+                      key={idx}
+                      className="bg-white p-2.5 rounded-xl border border-gray-200 flex items-center justify-between gap-2 shadow-sm text-xs"
+                    >
+                      <div className="truncate">
+                        <div className="font-bold text-gray-900 truncate">
+                          {item.title || item.product?.title || 'Label'}
+                        </div>
+                        <div className="text-[10px] text-gray-500">
+                          {item.quantity || 1} copies • ${Number(item.price || 0).toFixed(2)}
+                        </div>
+                      </div>
+
+                      <button
+                        onClick={() => onRemoveItemFromQueue(idx)}
+                        title="Delete label from print queue"
+                        className="text-gray-400 hover:text-rose-600 p-1 rounded-lg hover:bg-rose-50 transition-colors shrink-0"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
             {/* Print Options Toggles */}
             <div className="space-y-3 pt-3 border-t border-gray-200 text-xs font-medium text-gray-700">
               <label className="flex items-center gap-2 cursor-pointer">
@@ -136,24 +180,18 @@ export default function PrintPreviewModal({
               </label>
             </div>
 
-            {/* Info Box */}
-            <div className="bg-emerald-50 p-3.5 rounded-xl border border-emerald-200 text-emerald-900 text-xs space-y-1">
-              <div className="font-bold flex items-center gap-1.5 text-emerald-800">
-                <Check className="w-4 h-4 text-emerald-600" />
-                Browser Print Settings Tip:
-              </div>
-              <p className="text-[11px] leading-relaxed text-emerald-950">
-                In the print dialog, set <strong>Margins to "None"</strong> and disable headers/footers for exact alignment on Avery & Thermal rolls.
-              </p>
-            </div>
-
             {/* Print Button */}
             <button
               onClick={handlePrintTrigger}
-              className="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-sm py-3 px-4 rounded-xl flex items-center justify-center gap-2 shadow-xl shadow-emerald-500/20 transition-all hover:scale-[1.01] active:scale-95"
+              disabled={flattenedQueue.length === 0}
+              className={`w-full font-black text-sm py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition-all ${
+                flattenedQueue.length > 0
+                  ? 'bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-xl shadow-emerald-500/20 hover:scale-[1.01] active:scale-95'
+                  : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+              }`}
             >
               <Printer className="w-5 h-5" />
-              Print Labels Now
+              Print {flattenedQueue.length} Labels Now
             </button>
 
           </div>
@@ -184,10 +222,19 @@ export default function PrintPreviewModal({
                 {flattenedQueue.slice(0, 30).map((item, idx) => (
                   <div
                     key={idx}
-                    className={`p-2 bg-white flex flex-col justify-between overflow-hidden text-[9px] ${
+                    className={`p-2 bg-white flex flex-col justify-between overflow-hidden text-[9px] relative group ${
                       showCutLines ? 'border border-dashed border-gray-300' : 'border border-gray-100'
                     } ${item.isShelfTalker ? 'min-h-[110px]' : 'min-h-[85px]'}`}
                   >
+                    {/* Delete hover icon on individual label card */}
+                    <button
+                      onClick={() => onRemoveItemFromQueue(item.originalIndex)}
+                      title="Delete label design"
+                      className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 bg-rose-600 text-white p-1 rounded transition-opacity z-10"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </button>
+
                     {/* Header */}
                     <div className="flex items-center justify-between gap-1">
                       {renderLogo(item)}
