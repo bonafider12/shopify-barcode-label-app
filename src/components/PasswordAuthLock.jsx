@@ -106,9 +106,6 @@ export default function PasswordAuthLock({
                   {showPasscode ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
-              <span className="text-[11px] text-slate-500 block mt-1.5">
-                Default Master Passcode: <code className="text-emerald-400 font-bold bg-slate-800 px-1 py-0.5 rounded">scooter1</code>
-              </span>
             </div>
 
             <button
