@@ -25,14 +25,14 @@ export default function ProductLabelStudio({
   // Custom Product Override fields
   const [productTitle, setProductTitle] = useState(selectedProduct?.title || '');
   const [variantName, setVariantName] = useState(selectedProduct?.variant || '');
-  const [price, setPrice] = useState(selectedProduct?.price || 19.99);
-  const [compareAtPrice, setCompareAtPrice] = useState(selectedProduct?.compareAtPrice || 24.99);
-  const [sku, setSku] = useState(selectedProduct?.sku || 'SKU-884-X');
-  const [barcode, setBarcode] = useState(selectedProduct?.barcode || '850012948012');
+  const [price, setPrice] = useState(selectedProduct?.price || 0);
+  const [compareAtPrice, setCompareAtPrice] = useState(selectedProduct?.compareAtPrice || '');
+  const [sku, setSku] = useState(selectedProduct?.sku || '');
+  const [barcode, setBarcode] = useState(selectedProduct?.barcode || '');
   const [barcodeType, setBarcodeType] = useState(selectedProduct?.barcodeType || 'CODE128');
-  const [netWeight, setNetWeight] = useState(selectedProduct?.netWeight || '16 fl oz (473ml)');
-  const [origin, setOrigin] = useState(selectedProduct?.origin || 'Made in USA');
-  const [ecoBadge, setEcoBadge] = useState(selectedProduct?.ecoBadge || '100% Organic');
+  const [netWeight, setNetWeight] = useState(selectedProduct?.netWeight || '');
+  const [origin, setOrigin] = useState(selectedProduct?.origin || '');
+  const [ecoBadge, setEcoBadge] = useState(selectedProduct?.ecoBadge || '');
 
   // Styling & Toggles
   const [accentColor, setAccentColor] = useState('#10b981'); // Emerald
@@ -48,16 +48,16 @@ export default function ProductLabelStudio({
   // Sync state when selected product changes
   const handleProductSelect = (prod) => {
     setSelectedProduct(prod);
-    setProductTitle(prod.title);
-    setVariantName(prod.variant);
-    setPrice(prod.price);
+    setProductTitle(prod.title || '');
+    setVariantName(prod.variant || '');
+    setPrice(prod.price || 0);
     setCompareAtPrice(prod.compareAtPrice || '');
-    setSku(prod.sku);
-    setBarcode(prod.barcode);
+    setSku(prod.sku || '');
+    setBarcode(prod.barcode || '');
     setBarcodeType(prod.barcodeType || 'CODE128');
     setNetWeight(prod.netWeight || '');
-    setOrigin(prod.origin || 'Made in USA');
-    setEcoBadge(prod.ecoBadge || '100% Organic');
+    setOrigin(prod.origin || '');
+    setEcoBadge(prod.ecoBadge || '');
   };
 
   // Helper for logo SVG/Image rendering

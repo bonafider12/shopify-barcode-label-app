@@ -20,17 +20,17 @@ export default function ShelfLabelStudio({
   // Form Fields
   const [productTitle, setProductTitle] = useState(selectedProduct?.title || '');
   const [variantName, setVariantName] = useState(selectedProduct?.variant || '');
-  const [price, setPrice] = useState(selectedProduct?.price || 8.99);
-  const [compareAtPrice, setCompareAtPrice] = useState(selectedProduct?.compareAtPrice || 10.99);
-  const [unitPrice, setUnitPrice] = useState(selectedProduct?.unitPrice || '$0.56 / fl oz');
-  const [location, setLocation] = useState(selectedProduct?.location || 'Aisle 3 • Shelf B • Bin 04');
-  const [promoBadge, setPromoBadge] = useState('SPECIAL OFFER');
-  const [barcode, setBarcode] = useState(selectedProduct?.barcode || '850012948012');
-  const [qrUrl, setQrUrl] = useState(selectedProduct?.qrUrl || 'https://myshopify-store.com/products/green-juice');
-  const [vendor, setVendor] = useState(selectedProduct?.vendor || 'Verdant Organics');
+  const [price, setPrice] = useState(selectedProduct?.price || 0);
+  const [compareAtPrice, setCompareAtPrice] = useState(selectedProduct?.compareAtPrice || '');
+  const [unitPrice, setUnitPrice] = useState(selectedProduct?.unitPrice || '');
+  const [location, setLocation] = useState(selectedProduct?.location || '');
+  const [promoBadge, setPromoBadge] = useState('');
+  const [barcode, setBarcode] = useState(selectedProduct?.barcode || '');
+  const [qrUrl, setQrUrl] = useState(selectedProduct?.qrUrl || '');
+  const [vendor, setVendor] = useState(selectedProduct?.vendor || '');
 
   // Styling
-  const [headerTheme, setHeaderTheme] = useState('dark-emerald'); // 'dark-emerald', 'amber-gold', 'midnight-navy', 'crimson-sale'
+  const [headerTheme, setHeaderTheme] = useState('dark-emerald');
   const [showQR, setShowQR] = useState(true);
   const [showUnitPrice, setShowUnitPrice] = useState(true);
   const [showCompareSave, setShowCompareSave] = useState(true);
@@ -38,15 +38,15 @@ export default function ShelfLabelStudio({
   // Sync selected product
   const handleProductSelect = (prod) => {
     setSelectedProduct(prod);
-    setProductTitle(prod.title);
-    setVariantName(prod.variant);
-    setPrice(prod.price);
+    setProductTitle(prod.title || '');
+    setVariantName(prod.variant || '');
+    setPrice(prod.price || 0);
     setCompareAtPrice(prod.compareAtPrice || '');
-    setUnitPrice(prod.unitPrice || `$${(prod.price / 16).toFixed(2)} / oz`);
-    setLocation(prod.location || 'Aisle 1 • Shelf A');
-    setBarcode(prod.barcode);
-    setQrUrl(prod.qrUrl || `https://store.com/products/${prod.id}`);
-    setVendor(prod.vendor || 'Store Brand');
+    setUnitPrice(prod.unitPrice || '');
+    setLocation(prod.location || '');
+    setBarcode(prod.barcode || '');
+    setQrUrl(prod.qrUrl || '');
+    setVendor(prod.vendor || '');
   };
 
   const getSavingsAmount = () => {

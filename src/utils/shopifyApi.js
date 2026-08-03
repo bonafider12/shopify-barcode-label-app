@@ -1,4 +1,4 @@
-// Utility to interact with Shopify API with 250 limit & fallback SKU/barcode handling
+// Utility to interact with Shopify API with 250 limit & exact metadata mapping
 
 export async function fetchShopifyProducts(storeDomain, accessToken, clientId, clientSecret) {
   let cleanDomain = (storeDomain || 'midwestturftech.myshopify.com')
@@ -50,21 +50,22 @@ export async function fetchShopifyProducts(storeDomain, accessToken, clientId, c
     const variants = prod.variants?.nodes || [];
 
     if (variants.length === 0) {
-      // If product has no explicit variants object, create standard product entry
       formattedProducts.push({
         id: prod.id || `prod_${autoSkuCounter}`,
         title: prod.title || 'Untitled Product',
-        variant: 'Standard',
+        variant: '',
         sku: `SKU-MWT-${autoSkuCounter}`,
         barcode: `${Math.floor(100000000000 + autoSkuCounter * 987654)}`,
         barcodeType: 'CODE128',
         price: 0,
         compareAtPrice: null,
-        unitPrice: `$0.00 / ea`,
-        vendor: prod.vendor || 'Midwest Turf Tech',
-        category: prod.productType || 'Turf Equipment',
-        origin: 'Made in USA',
-        location: 'Aisle 1 • Shelf A',
+        unitPrice: '',
+        vendor: prod.vendor || '',
+        category: prod.productType || '',
+        origin: '',
+        location: '',
+        ecoBadge: '',
+        netWeight: '',
         image: image
       });
       autoSkuCounter++;
@@ -86,20 +87,24 @@ export async function fetchShopifyProducts(storeDomain, accessToken, clientId, c
           ? variant.barcode.trim()
           : `${Math.floor(100000000000 + Math.random() * 900000000000)}`;
 
+        const variantTitle = variant.title && variant.title !== 'Default Title' ? variant.title : '';
+
         formattedProducts.push({
           id: variant.id || `var_${autoSkuCounter}`,
           title: prod.title || 'Untitled Product',
-          variant: variant.title !== 'Default Title' ? variant.title : 'Standard',
+          variant: variantTitle,
           sku: finalSku,
           barcode: finalBarcode,
           barcodeType: 'CODE128',
           price: numPrice,
           compareAtPrice: numCompare,
-          unitPrice: `$${numPrice.toFixed(2)} / ea`,
-          vendor: prod.vendor || 'Midwest Turf Tech',
-          category: prod.productType || 'Turf Equipment',
-          origin: 'Made in USA',
-          location: 'Aisle 1 • Shelf A',
+          unitPrice: numPrice > 0 ? `$${numPrice.toFixed(2)} / ea` : '',
+          vendor: prod.vendor || '',
+          category: prod.productType || '',
+          origin: '',
+          location: '',
+          ecoBadge: '',
+          netWeight: '',
           image: image
         });
       });
