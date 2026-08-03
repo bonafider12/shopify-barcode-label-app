@@ -1,4 +1,4 @@
-// Utility to interact with Shopify Admin GraphQL API via Serverless Proxy or Direct
+// Utility to interact with Shopify Admin API & Storefront API via Serverless Proxy or Direct
 
 export async function fetchShopifyProducts(storeDomain, accessToken) {
   let cleanDomain = storeDomain.trim().replace(/^https?:\/\//, '').replace(/\/$/, '');
@@ -9,11 +9,10 @@ export async function fetchShopifyProducts(storeDomain, accessToken) {
   // Diagnostic check for token prefix
   if (accessToken.startsWith('shpss_')) {
     throw new Error(
-      'Notice: "shpss_..." is a Partner Client Secret (used for app installs). For Admin API product queries, Shopify requires an Admin API Access Token starting with "shpat_..." (from Store Admin > Settings > Apps > Develop Apps > Install App).'
+      'Notice: "shpss_..." is a Partner Client Secret (used for app installs). Please use your Admin API Token ("shpat_...") or Storefront Access Token ("shpka_...").'
     );
   }
 
-  // Try Vercel Serverless Proxy first to bypass browser CORS
   let response;
   let data;
 
@@ -30,13 +29,26 @@ export async function fetchShopifyProducts(storeDomain, accessToken) {
       data = await response.json();
     }
   } catch (e) {
-    // If running locally without Vercel serverless functions, fallback to direct fetch
     console.warn('Proxy endpoint unavailable, trying direct fetch...', e);
   }
 
-  // Direct fetch fallback
+  // Direct fetch fallback if local dev
   if (!data) {
-    const endpoint = `https://${cleanDomain}/admin/api/2024-07/graphql.json`;
+    const isStorefront = accessToken.startsWith('shpka_');
+    const endpoint = isStorefront
+      ? `https://${cleanDomain}/api/2024-07/graphql.json`
+      : `https://${cleanDomain}/admin/api/2024-07/graphql.json`;
+
+    const headers = isStorefront
+      ? {
+          'Content-Type': 'application/json',
+          'X-Shopify-Storefront-Access-Token': accessToken
+        }
+      : {
+          'Content-Type': 'application/json',
+          'X-Shopify-Access-Token': accessToken
+        };
+
     const query = `
       query getProducts {
         products(first: 50) {
@@ -45,15 +57,11 @@ export async function fetchShopifyProducts(storeDomain, accessToken) {
             title
             vendor
             productType
-            featuredImage {
-              url
-            }
+            featuredImage { url }
             variants(first: 10) {
               nodes {
                 id
                 title
-                price
-                compareAtPrice
                 sku
                 barcode
               }
@@ -66,20 +74,17 @@ export async function fetchShopifyProducts(storeDomain, accessToken) {
     try {
       response = await fetch(endpoint, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Shopify-Access-Token': accessToken
-        },
+        headers,
         body: JSON.stringify({ query })
       });
 
       if (!response.ok) {
-        throw new Error(`Shopify API error HTTP ${response.status}. Ensure token has read_products scope.`);
+        throw new Error(`Shopify API error HTTP ${response.status}`);
       }
       data = await response.json();
     } catch (err) {
       throw new Error(
-        'Browser CORS blocked direct fetch to myshopify.com. Deploy to Vercel (where our /api/shopify serverless proxy handles it automatically) or use the Shopify CSV Import tab!'
+        'Browser CORS blocked direct fetch to myshopify.com. Deploy to Vercel (where our /api/shopify proxy runs) or use the Shopify CSV Import tab!'
       );
     }
   }
@@ -94,6 +99,12 @@ export async function fetchShopifyProducts(storeDomain, accessToken) {
   rawProducts.forEach((prod) => {
     const image = prod.featuredImage?.url || null;
     prod.variants.nodes.forEach((variant) => {
+      const priceVal = typeof variant.price === 'object' ? variant.price?.amount : variant.price;
+      const compareVal = typeof variant.compareAtPrice === 'object' ? variant.compareAtPrice?.amount : variant.compareAtPrice;
+
+      const numPrice = parseFloat(priceVal) || 0;
+      const numCompare = compareVal ? parseFloat(compareVal) : null;
+
       formattedProducts.push({
         id: variant.id,
         title: prod.title,
@@ -101,9 +112,9 @@ export async function fetchShopifyProducts(storeDomain, accessToken) {
         sku: variant.sku || `SKU-${Math.floor(1000 + Math.random() * 9000)}`,
         barcode: variant.barcode || `${Math.floor(100000000000 + Math.random() * 900000000000)}`,
         barcodeType: 'CODE128',
-        price: parseFloat(variant.price) || 0,
-        compareAtPrice: variant.compareAtPrice ? parseFloat(variant.compareAtPrice) : null,
-        unitPrice: `$${variant.price} / ea`,
+        price: numPrice,
+        compareAtPrice: numCompare,
+        unitPrice: `$${numPrice} / ea`,
         vendor: prod.vendor || 'Shopify Store',
         category: prod.productType || 'Store Inventory',
         origin: 'Shopify Store Item',

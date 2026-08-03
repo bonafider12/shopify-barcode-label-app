@@ -1,5 +1,5 @@
-// Vercel Serverless API Proxy for Shopify Admin GraphQL API
-// Solves CORS blocking and handles Shopify API calls securely
+// Vercel Serverless API Proxy for Shopify Admin API & Storefront API
+// Supports both Admin Tokens (shpat_...) and Storefront Tokens (shpka_...)
 
 export default async function handler(req, res) {
   // Enable CORS headers
@@ -31,48 +31,81 @@ export default async function handler(req, res) {
     cleanDomain = `${cleanDomain}.myshopify.com`;
   }
 
-  const endpoint = `https://${cleanDomain}/admin/api/2024-07/graphql.json`;
+  const isStorefront = accessToken.startsWith('shpka_');
 
-  const query = `
-    query getProducts {
-      products(first: 50) {
-        nodes {
-          id
-          title
-          vendor
-          productType
-          featuredImage {
-            url
-          }
-          variants(first: 10) {
-            nodes {
-              id
-              title
-              price
-              compareAtPrice
-              sku
-              barcode
+  const endpoint = isStorefront
+    ? `https://${cleanDomain}/api/2024-07/graphql.json`
+    : `https://${cleanDomain}/admin/api/2024-07/graphql.json`;
+
+  const headers = isStorefront
+    ? {
+        'Content-Type': 'application/json',
+        'X-Shopify-Storefront-Access-Token': accessToken
+      }
+    : {
+        'Content-Type': 'application/json',
+        'X-Shopify-Access-Token': accessToken
+      };
+
+  const query = isStorefront
+    ? `
+      query getProducts {
+        products(first: 50) {
+          nodes {
+            id
+            title
+            vendor
+            productType
+            featuredImage { url }
+            variants(first: 10) {
+              nodes {
+                id
+                title
+                price { amount }
+                compareAtPrice { amount }
+                sku
+                barcode
+              }
             }
           }
         }
       }
-    }
-  `;
+    `
+    : `
+      query getProducts {
+        products(first: 50) {
+          nodes {
+            id
+            title
+            vendor
+            productType
+            featuredImage { url }
+            variants(first: 10) {
+              nodes {
+                id
+                title
+                price
+                compareAtPrice
+                sku
+                barcode
+              }
+            }
+          }
+        }
+      }
+    `;
 
   try {
     const shopifyRes = await fetch(endpoint, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Shopify-Access-Token': accessToken
-      },
+      headers,
       body: JSON.stringify({ query })
     });
 
     if (!shopifyRes.ok) {
       const errorText = await shopifyRes.text();
       return res.status(shopifyRes.status).json({
-        error: `Shopify Admin API returned status ${shopifyRes.status}: ${errorText}`
+        error: `Shopify API returned HTTP ${shopifyRes.status}: ${errorText}`
       });
     }
 
