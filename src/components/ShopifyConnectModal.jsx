@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { ShoppingBag, Upload, Key, X, RefreshCw, Globe, CheckCircle2, AlertCircle, FileSpreadsheet, ArrowRight, Zap } from 'lucide-react';
+import { ShoppingBag, Upload, Key, X, RefreshCw, Globe, CheckCircle2, AlertCircle, FileSpreadsheet, ArrowRight, Zap, ShieldCheck } from 'lucide-react';
 import { fetchShopifyProducts } from '../utils/shopifyApi';
 import { parseShopifyCSV } from '../utils/csvImporter';
 
@@ -15,8 +15,9 @@ export default function ShopifyConnectModal({
   autoSyncEnabled,
   setAutoSyncEnabled
 }) {
-  const [storeDomain, setStoreDomain] = useState(shopifyStoreDomain || '');
-  const [accessToken, setAccessToken] = useState(shopifyAccessToken || '');
+  const [storeDomain, setStoreDomain] = useState(shopifyStoreDomain || 'midwestturftech.myshopify.com');
+  const [clientId, setClientId] = useState('');
+  const [clientSecret, setClientSecret] = useState(shopifyAccessToken || '');
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState(null);
   const [activeTab, setActiveTab] = useState('api'); // 'api' | 'csv' | 'vercel'
@@ -26,28 +27,29 @@ export default function ShopifyConnectModal({
 
   const handleApiConnect = async (e) => {
     e.preventDefault();
-    if (!storeDomain || !accessToken) {
-      setErrorMessage('Please enter both store domain and API Access Token');
+    if (!clientSecret) {
+      setErrorMessage('Please enter your Secret or API Token');
       return;
     }
     setIsLoading(true);
     setErrorMessage(null);
 
     try {
-      const liveProducts = await fetchShopifyProducts(storeDomain, accessToken);
+      const liveProducts = await fetchShopifyProducts(storeDomain, clientSecret, clientId, clientSecret);
       if (liveProducts.length === 0) {
-        setErrorMessage('Connected successfully, but no products were found in this Shopify store.');
+        setErrorMessage('Connected successfully, but no products were found in Midwest Turf Tech store.');
       } else {
-        // Save credentials for automatic sync
+        // Save credentials for automatic background sync
         setShopifyStoreDomain(storeDomain);
-        setShopifyAccessToken(accessToken);
+        setShopifyAccessToken(clientSecret);
         localStorage.setItem('shopify_domain', storeDomain);
-        localStorage.setItem('shopify_token', accessToken);
+        localStorage.setItem('shopify_token', clientSecret);
+        if (clientId) localStorage.setItem('shopify_client_id', clientId);
         localStorage.setItem('shopify_autosync', 'true');
         setAutoSyncEnabled(true);
 
         onImportProducts(liveProducts);
-        onShowToast(`Downloaded ${liveProducts.length} live products automatically from ${storeDomain}!`);
+        onShowToast(`Downloaded ${liveProducts.length} products from ${storeDomain}!`);
         onClose();
       }
     } catch (err) {
@@ -91,8 +93,8 @@ export default function ShopifyConnectModal({
               🛍️
             </div>
             <div>
-              <h3 className="font-extrabold text-base text-white">Automatic Live Shopify Downloader</h3>
-              <p className="text-xs text-slate-400">Sync store products & variants automatically</p>
+              <h3 className="font-extrabold text-base text-white">Midwest Turf Tech Shopify Credentials</h3>
+              <p className="text-xs text-slate-400">Automatic Sync via Partner App Credentials / Secret</p>
             </div>
           </div>
           <button
@@ -114,7 +116,7 @@ export default function ShopifyConnectModal({
             }`}
           >
             <Zap className="w-4 h-4 text-emerald-600" />
-            Automatic Download & Sync
+            Automatic App Sync
           </button>
 
           <button
@@ -160,26 +162,39 @@ export default function ShopifyConnectModal({
                 </label>
                 <input
                   type="text"
-                  placeholder="midwestturftech.com or midwestturftech.myshopify.com"
                   value={storeDomain}
                   onChange={(e) => setStoreDomain(e.target.value)}
+                  placeholder="midwestturftech.myshopify.com"
                   className="w-full text-xs p-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-emerald-500 outline-none"
                 />
               </div>
 
               <div>
                 <label className="text-xs font-bold text-gray-800 block mb-1">
-                  API Access Token (`shpat_...` or `shpka_...`)
+                  Client ID (Optional)
+                </label>
+                <input
+                  type="text"
+                  value={clientId}
+                  onChange={(e) => setClientId(e.target.value)}
+                  placeholder="e.g. d7d38022dce1328c65822a75d61c438a"
+                  className="w-full text-xs p-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-emerald-500 outline-none font-mono"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-gray-800 block mb-1">
+                  Secret or Token (`shpss_...` or `shpat_...`)
                 </label>
                 <input
                   type="password"
-                  placeholder="shpat_xxxxxxxxxxxxxxxxxxxxxxxx"
-                  value={accessToken}
-                  onChange={(e) => setAccessToken(e.target.value)}
+                  value={clientSecret}
+                  onChange={(e) => setClientSecret(e.target.value)}
+                  placeholder="Paste your Secret or Token"
                   className="w-full text-xs p-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-emerald-500 outline-none font-mono"
                 />
                 <span className="text-[10px] text-gray-500 block mt-1">
-                  From Shopify Admin Dev Dashboard &gt; Install App (or Storefront API token).
+                  Accepts your Client Secret (`shpss_...`) or Admin Access Token (`shpat_...`).
                 </span>
               </div>
 
@@ -187,7 +202,7 @@ export default function ShopifyConnectModal({
                 <div className="space-y-0.5">
                   <div className="font-bold flex items-center gap-1.5 text-emerald-900">
                     <Zap className="w-3.5 h-3.5 text-emerald-600" />
-                    Automatic Background Downloader
+                    Automatic Background Downloader Active
                   </div>
                   <p className="text-[11px] text-emerald-800">
                     Automatically downloads fresh product listings whenever you open the app.

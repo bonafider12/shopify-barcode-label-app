@@ -1,5 +1,5 @@
-// Vercel Serverless API Proxy for Shopify Admin API & Storefront API
-// Supports both Admin Tokens (shpat_...) and Storefront Tokens (shpka_...)
+// Vercel Serverless API Proxy for Shopify
+// Supports Client ID & Client Secret (shpss_...), Admin Access Tokens (shpat_...), and Storefront Tokens (shpka_...)
 
 export default async function handler(req, res) {
   // Enable CORS headers
@@ -20,32 +20,42 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
-  const { storeDomain, accessToken } = req.body || {};
+  const { storeDomain, accessToken, clientId, clientSecret } = req.body || {};
 
-  if (!storeDomain || !accessToken) {
-    return res.status(400).json({ error: 'Missing storeDomain or accessToken in request body' });
-  }
-
-  let cleanDomain = storeDomain.trim().replace(/^https?:\/\//, '').replace(/\/$/, '');
+  const targetDomain = storeDomain || process.env.SHOPIFY_STORE_DOMAIN || 'midwestturftech.myshopify.com';
+  let cleanDomain = targetDomain.trim().replace(/^https?:\/\//, '').replace(/\/$/, '');
   if (!cleanDomain.includes('.myshopify.com')) {
     cleanDomain = `${cleanDomain}.myshopify.com`;
   }
 
-  const isStorefront = accessToken.startsWith('shpka_');
+  const effectiveToken = accessToken || clientSecret || process.env.SHOPIFY_CLIENT_SECRET || '';
+  const effectiveClientId = clientId || process.env.SHOPIFY_CLIENT_ID || '';
+
+  if (!effectiveToken) {
+    return res.status(400).json({ error: 'Missing API Token or Client Secret' });
+  }
+
+  const isStorefront = effectiveToken.startsWith('shpka_');
+  const isAppSecret = effectiveToken.startsWith('shpss_');
 
   const endpoint = isStorefront
     ? `https://${cleanDomain}/api/2024-07/graphql.json`
     : `https://${cleanDomain}/admin/api/2024-07/graphql.json`;
 
-  const headers = isStorefront
-    ? {
-        'Content-Type': 'application/json',
-        'X-Shopify-Storefront-Access-Token': accessToken
-      }
-    : {
-        'Content-Type': 'application/json',
-        'X-Shopify-Access-Token': accessToken
-      };
+  const headers = {
+    'Content-Type': 'application/json'
+  };
+
+  if (isStorefront) {
+    headers['X-Shopify-Storefront-Access-Token'] = effectiveToken;
+  } else if (isAppSecret) {
+    headers['X-Shopify-Access-Token'] = effectiveToken;
+    if (effectiveClientId) {
+      headers['X-Shopify-Client-Id'] = effectiveClientId;
+    }
+  } else {
+    headers['X-Shopify-Access-Token'] = effectiveToken;
+  }
 
   const query = isStorefront
     ? `
@@ -105,14 +115,14 @@ export default async function handler(req, res) {
     if (!shopifyRes.ok) {
       const errorText = await shopifyRes.text();
       return res.status(shopifyRes.status).json({
-        error: `Shopify API returned HTTP ${shopifyRes.status}: ${errorText}`
+        error: `Shopify responded with HTTP ${shopifyRes.status}: ${errorText}`
       });
     }
 
     const data = await shopifyRes.json();
     return res.status(200).json(data);
   } catch (err) {
-    console.error('Serverless Shopify Proxy Error:', err);
+    console.error('Serverless Proxy Error:', err);
     return res.status(500).json({ error: err.message || 'Internal Server Error querying Shopify' });
   }
 }

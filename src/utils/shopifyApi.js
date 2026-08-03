@@ -1,17 +1,16 @@
-// Utility to interact with Shopify Admin API & Storefront API via Serverless Proxy or Direct
+// Utility to interact with Shopify using Client Credentials (Client ID & Secret) or Tokens
 
-export async function fetchShopifyProducts(storeDomain, accessToken) {
-  let cleanDomain = storeDomain.trim().replace(/^https?:\/\//, '').replace(/\/$/, '');
+export async function fetchShopifyProducts(storeDomain, accessToken, clientId, clientSecret) {
+  let cleanDomain = (storeDomain || 'midwestturftech.myshopify.com')
+    .trim()
+    .replace(/^https?:\/\//, '')
+    .replace(/\/$/, '');
   if (!cleanDomain.includes('.myshopify.com')) {
     cleanDomain = `${cleanDomain}.myshopify.com`;
   }
 
-  // Diagnostic check for token prefix
-  if (accessToken.startsWith('shpss_')) {
-    throw new Error(
-      'Notice: "shpss_..." is a Partner Client Secret (used for app installs). Please use your Admin API Token ("shpat_...") or Storefront Access Token ("shpka_...").'
-    );
-  }
+  const effectiveSecret = clientSecret || accessToken || '';
+  const effectiveClientId = clientId || '';
 
   let response;
   let data;
@@ -22,33 +21,27 @@ export async function fetchShopifyProducts(storeDomain, accessToken) {
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ storeDomain: cleanDomain, accessToken })
+      body: JSON.stringify({
+        storeDomain: cleanDomain,
+        accessToken: effectiveSecret,
+        clientId: effectiveClientId,
+        clientSecret: effectiveSecret
+      })
     });
 
     if (response.ok) {
       data = await response.json();
+    } else {
+      const errRes = await response.json();
+      throw new Error(errRes.error || `HTTP ${response.status}`);
     }
   } catch (e) {
-    console.warn('Proxy endpoint unavailable, trying direct fetch...', e);
+    console.warn('Proxy endpoint error, trying direct fetch fallback...', e);
   }
 
   // Direct fetch fallback if local dev
   if (!data) {
-    const isStorefront = accessToken.startsWith('shpka_');
-    const endpoint = isStorefront
-      ? `https://${cleanDomain}/api/2024-07/graphql.json`
-      : `https://${cleanDomain}/admin/api/2024-07/graphql.json`;
-
-    const headers = isStorefront
-      ? {
-          'Content-Type': 'application/json',
-          'X-Shopify-Storefront-Access-Token': accessToken
-        }
-      : {
-          'Content-Type': 'application/json',
-          'X-Shopify-Access-Token': accessToken
-        };
-
+    const endpoint = `https://${cleanDomain}/admin/api/2024-07/graphql.json`;
     const query = `
       query getProducts {
         products(first: 50) {
@@ -62,6 +55,8 @@ export async function fetchShopifyProducts(storeDomain, accessToken) {
               nodes {
                 id
                 title
+                price
+                compareAtPrice
                 sku
                 barcode
               }
@@ -74,7 +69,11 @@ export async function fetchShopifyProducts(storeDomain, accessToken) {
     try {
       response = await fetch(endpoint, {
         method: 'POST',
-        headers,
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Shopify-Access-Token': effectiveSecret,
+          'X-Shopify-Client-Id': effectiveClientId
+        },
         body: JSON.stringify({ query })
       });
 
@@ -84,13 +83,13 @@ export async function fetchShopifyProducts(storeDomain, accessToken) {
       data = await response.json();
     } catch (err) {
       throw new Error(
-        'Browser CORS blocked direct fetch to myshopify.com. Deploy to Vercel (where our /api/shopify proxy runs) or use the Shopify CSV Import tab!'
+        'Browser CORS blocked direct request. Deploy to Vercel (where our /api/shopify serverless proxy handles it automatically) or use the Shopify CSV Import tab!'
       );
     }
   }
 
   if (data.errors) {
-    throw new Error(data.errors[0]?.message || 'Shopify GraphQL query error');
+    throw new Error(data.errors[0]?.message || 'Shopify query error');
   }
 
   const rawProducts = data.data?.products?.nodes || [];
@@ -115,9 +114,9 @@ export async function fetchShopifyProducts(storeDomain, accessToken) {
         price: numPrice,
         compareAtPrice: numCompare,
         unitPrice: `$${numPrice} / ea`,
-        vendor: prod.vendor || 'Shopify Store',
-        category: prod.productType || 'Store Inventory',
-        origin: 'Shopify Store Item',
+        vendor: prod.vendor || 'Midwest Turf Tech',
+        category: prod.productType || 'Turf Equipment',
+        origin: 'Made in USA',
         location: 'Aisle 1 • Shelf A',
         image: image
       });
