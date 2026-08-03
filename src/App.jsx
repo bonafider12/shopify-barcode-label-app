@@ -15,7 +15,7 @@ export default function App() {
     return sessionStorage.getItem('app_unlocked') === 'true';
   });
   const [storedPasscode, setStoredPasscode] = useState(() => {
-    return localStorage.getItem('app_passcode') || 'admin123';
+    return localStorage.getItem('app_passcode') || 'scooter1';
   });
 
   const [activeTab, setActiveTab] = useState('product'); // 'product' | 'shelf' | 'catalog'

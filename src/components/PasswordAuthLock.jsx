@@ -4,7 +4,7 @@ import { Lock, Key, ShieldCheck, AlertCircle, Eye, EyeOff, CheckCircle2 } from '
 export default function PasswordAuthLock({
   isUnlocked,
   onUnlockSuccess,
-  storedPasscode = 'admin123',
+  storedPasscode = 'scooter1',
   onUpdatePasscode
 }) {
   const [inputPasscode, setInputPasscode] = useState('');
@@ -94,7 +94,7 @@ export default function PasswordAuthLock({
                   type={showPasscode ? 'text' : 'password'}
                   value={inputPasscode}
                   onChange={(e) => setInputPasscode(e.target.value)}
-                  placeholder="Enter passcode (default: admin123)"
+                  placeholder="Enter passcode"
                   autoFocus
                   className="w-full text-sm p-3.5 pr-10 rounded-xl bg-slate-950 border border-slate-700 text-white placeholder-slate-500 focus:ring-2 focus:ring-emerald-500 outline-none font-mono"
                 />
@@ -107,7 +107,7 @@ export default function PasswordAuthLock({
                 </button>
               </div>
               <span className="text-[11px] text-slate-500 block mt-1.5">
-                Default Master Passcode: <code className="text-emerald-400 font-bold bg-slate-800 px-1 py-0.5 rounded">admin123</code>
+                Default Master Passcode: <code className="text-emerald-400 font-bold bg-slate-800 px-1 py-0.5 rounded">scooter1</code>
               </span>
             </div>
 
