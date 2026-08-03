@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Upload, Image as ImageIcon, Check, RefreshCw, Plus, Trash2, Tag, BookmarkPlus } from 'lucide-react';
+import { Upload, Image as ImageIcon, Check, RefreshCw, Plus, Trash2, Tag, BookmarkPlus, RotateCcw } from 'lucide-react';
 import { PRESET_LOGOS } from '../data/mockProducts';
 
 export default function LogoUploader({
@@ -28,13 +28,29 @@ export default function LogoUploader({
     return [];
   });
 
+  // 2. Persistent Hidden/Deleted Built-in Presets in localStorage
+  const [deletedPresetIds, setDeletedPresetIds] = useState(() => {
+    const saved = localStorage.getItem('app_deleted_brand_presets');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      } catch (e) {}
+    }
+    return [];
+  });
+
   useEffect(() => {
     try {
       localStorage.setItem('app_saved_brand_presets', JSON.stringify(customBrandPresets));
-    } catch (e) {
-      console.warn('localStorage brand presets save notice:', e);
-    }
+    } catch (e) {}
   }, [customBrandPresets]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('app_deleted_brand_presets', JSON.stringify(deletedPresetIds));
+    } catch (e) {}
+  }, [deletedPresetIds]);
 
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
@@ -51,7 +67,8 @@ export default function LogoUploader({
 
   const clearLogo = () => {
     setCustomLogo(null);
-    setSelectedPresetId(PRESET_LOGOS[0].id);
+    const visibleDefault = PRESET_LOGOS.find((p) => !deletedPresetIds.includes(p.id));
+    setSelectedPresetId(visibleDefault ? visibleDefault.id : null);
     setShowSaveForm(false);
   };
 
@@ -76,6 +93,21 @@ export default function LogoUploader({
     setCustomBrandPresets((prev) => prev.filter((b) => b.id !== idToDelete));
   };
 
+  const handleDeleteBuiltinPreset = (idToDelete, e) => {
+    e.stopPropagation();
+    setDeletedPresetIds((prev) => [...prev, idToDelete]);
+    if (selectedPresetId === idToDelete) {
+      setSelectedPresetId(null);
+    }
+  };
+
+  const handleRestoreDefaultPresets = () => {
+    setDeletedPresetIds([]);
+    setCustomBrandPresets([]);
+    localStorage.removeItem('app_deleted_brand_presets');
+    localStorage.removeItem('app_saved_brand_presets');
+  };
+
   const handleSelectBrandPreset = (brand) => {
     if (brand.logoData) {
       setCustomLogo(brand.logoData);
@@ -88,6 +120,9 @@ export default function LogoUploader({
       setSelectedPresetId(brand.id);
     }
   };
+
+  const visibleBuiltinPresets = PRESET_LOGOS.filter((p) => !deletedPresetIds.includes(p.id));
+  const totalAvailableCount = customBrandPresets.length + visibleBuiltinPresets.length;
 
   return (
     <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm space-y-4">
@@ -102,7 +137,7 @@ export default function LogoUploader({
             onClick={clearLogo}
             className="text-xs text-slate-500 hover:text-rose-600 flex items-center gap-1 transition-colors font-medium"
           >
-            <RefreshCw className="w-3 h-3" /> Reset Logo
+            <RefreshCw className="w-3 h-3" /> Reset Active Logo
           </button>
         )}
       </div>
@@ -160,7 +195,18 @@ export default function LogoUploader({
       <div>
         <div className="flex items-center justify-between mb-2">
           <span className="text-xs font-medium text-gray-600">Choose Brand Preset:</span>
-          <span className="text-[10px] text-gray-400">{PRESET_LOGOS.length + customBrandPresets.length} presets available</span>
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] text-gray-400">{totalAvailableCount} presets</span>
+            {deletedPresetIds.length > 0 && (
+              <button
+                type="button"
+                onClick={handleRestoreDefaultPresets}
+                className="text-[10px] text-emerald-600 hover:text-emerald-700 font-bold underline flex items-center gap-0.5"
+              >
+                <RotateCcw className="w-2.5 h-2.5" /> Restore Defaults
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="grid grid-cols-2 gap-2">
@@ -193,7 +239,7 @@ export default function LogoUploader({
                     type="button"
                     onClick={(e) => handleDeleteCustomPreset(brand.id, e)}
                     title="Delete Brand Preset"
-                    className="text-gray-300 hover:text-rose-600 p-0.5 rounded transition-colors"
+                    className="text-gray-300 hover:text-rose-600 p-1 rounded transition-colors"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
@@ -202,27 +248,39 @@ export default function LogoUploader({
             );
           })}
 
-          {/* Built-in Default Brand Presets */}
-          {PRESET_LOGOS.map((preset) => {
+          {/* Built-in Default Brand Presets with Delete Action */}
+          {visibleBuiltinPresets.map((preset) => {
             const isSelected = !customLogo && selectedPresetId === preset.id;
             return (
-              <button
+              <div
                 key={preset.id}
-                type="button"
                 onClick={() => handleSelectBrandPreset(preset)}
-                className={`p-2 rounded-lg border text-left flex items-center gap-2 transition-all ${
+                className={`p-2 rounded-lg border text-left flex items-center justify-between gap-2 transition-all cursor-pointer ${
                   isSelected
                     ? 'border-emerald-600 bg-emerald-50/70 text-emerald-950 font-bold ring-1 ring-emerald-600 shadow-sm'
                     : 'border-gray-200 hover:border-gray-300 bg-white text-gray-700'
                 }`}
               >
-                <div
-                  className="w-10 h-5 flex items-center justify-center shrink-0"
-                  dangerouslySetInnerHTML={{ __html: preset.svg }}
-                />
-                <span className="text-xs truncate">{preset.name}</span>
-                {isSelected && <Check className="w-3.5 h-3.5 text-emerald-600 ml-auto shrink-0" />}
-              </button>
+                <div className="flex items-center gap-2 truncate min-w-0">
+                  <div
+                    className="w-10 h-5 flex items-center justify-center shrink-0"
+                    dangerouslySetInnerHTML={{ __html: preset.svg }}
+                  />
+                  <span className="text-xs truncate">{preset.name}</span>
+                </div>
+
+                <div className="flex items-center gap-1 shrink-0">
+                  {isSelected && <Check className="w-3.5 h-3.5 text-emerald-600" />}
+                  <button
+                    type="button"
+                    onClick={(e) => handleDeleteBuiltinPreset(preset.id, e)}
+                    title="Delete Brand Preset"
+                    className="text-gray-300 hover:text-rose-600 p-1 rounded transition-colors"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
             );
           })}
 
