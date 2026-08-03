@@ -11,15 +11,15 @@ import { fetchShopifyProducts } from './utils/shopifyApi';
 import { CheckCircle2, Printer, Sparkles, Globe, RefreshCw, Zap } from 'lucide-react';
 
 export default function App() {
-  // Password Protection Auth State
+  // 1. Persistent Auth Lock State (Saved in localStorage)
   const [isUnlocked, setIsUnlocked] = useState(() => {
-    return sessionStorage.getItem('app_unlocked') === 'true';
+    return localStorage.getItem('app_unlocked') === 'true';
   });
   const [storedPasscode, setStoredPasscode] = useState(() => {
     return localStorage.getItem('app_passcode') || 'scooter1';
   });
 
-  // Shopify Auto-Sync & Credentials state
+  // 2. Persistent Shopify Auto-Sync & Credentials State
   const [shopifyStoreDomain, setShopifyStoreDomain] = useState(() => {
     return localStorage.getItem('shopify_domain') || '';
   });
@@ -32,9 +32,26 @@ export default function App() {
   const [isAutoSyncing, setIsAutoSyncing] = useState(false);
 
   const [activeTab, setActiveTab] = useState('product'); // 'product' | 'shelf' | 'catalog'
-  const [products, setProducts] = useState(MOCK_PRODUCTS);
-  const [selectedProduct, setSelectedProduct] = useState(MOCK_PRODUCTS[0]);
-  const [customLogo, setCustomLogo] = useState(null);
+
+  // 3. Persistent Products & Custom Catalog (Saved in localStorage)
+  const [products, setProducts] = useState(() => {
+    const saved = localStorage.getItem('app_products');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      } catch (e) {}
+    }
+    return MOCK_PRODUCTS;
+  });
+
+  const [selectedProduct, setSelectedProduct] = useState(() => products[0] || MOCK_PRODUCTS[0]);
+
+  // 4. Persistent Custom Logo (Saved in localStorage)
+  const [customLogo, setCustomLogo] = useState(() => {
+    return localStorage.getItem('app_custom_logo') || null;
+  });
+
   const [selectedPresetId, setSelectedPresetId] = useState(PRESET_LOGOS[0].id);
 
   // Modals state
@@ -42,20 +59,60 @@ export default function App() {
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
 
-  // Print Queue
-  const [printQueue, setPrintQueue] = useState([
-    {
-      product: MOCK_PRODUCTS[0],
-      title: MOCK_PRODUCTS[0].title,
-      variant: MOCK_PRODUCTS[0].variant,
-      price: MOCK_PRODUCTS[0].price,
-      sku: MOCK_PRODUCTS[0].sku,
-      barcode: MOCK_PRODUCTS[0].barcode,
-      barcodeType: MOCK_PRODUCTS[0].barcodeType,
-      selectedPresetId: PRESET_LOGOS[0].id,
-      quantity: 10
+  // 5. Persistent Print Queue & Created Labels (Saved in localStorage)
+  const [printQueue, setPrintQueue] = useState(() => {
+    const savedQueue = localStorage.getItem('app_print_queue');
+    if (savedQueue) {
+      try {
+        const parsed = JSON.parse(savedQueue);
+        if (Array.isArray(parsed)) return parsed;
+      } catch (e) {}
     }
-  ]);
+    return [
+      {
+        product: MOCK_PRODUCTS[0],
+        title: MOCK_PRODUCTS[0].title,
+        variant: MOCK_PRODUCTS[0].variant,
+        price: MOCK_PRODUCTS[0].price,
+        sku: MOCK_PRODUCTS[0].sku,
+        barcode: MOCK_PRODUCTS[0].barcode,
+        barcodeType: MOCK_PRODUCTS[0].barcodeType,
+        selectedPresetId: PRESET_LOGOS[0].id,
+        quantity: 10
+      }
+    ];
+  });
+
+  // Automatically persist products changes to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('app_products', JSON.stringify(products));
+    } catch (e) {
+      console.warn('localStorage save products notice:', e);
+    }
+  }, [products]);
+
+  // Automatically persist print queue (created labels) to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('app_print_queue', JSON.stringify(printQueue));
+    } catch (e) {
+      console.warn('localStorage save queue notice:', e);
+    }
+  }, [printQueue]);
+
+  // Automatically persist custom logo to localStorage
+  useEffect(() => {
+    try {
+      if (customLogo) {
+        localStorage.setItem('app_custom_logo', customLogo);
+      } else {
+        localStorage.removeItem('app_custom_logo');
+      }
+    } catch (e) {
+      console.warn('localStorage save logo notice:', e);
+    }
+  }, [customLogo]);
 
   // Automatic Product Downloader Effect on Startup
   useEffect(() => {
@@ -83,13 +140,13 @@ export default function App() {
 
   const handleUnlockSuccess = () => {
     setIsUnlocked(true);
-    sessionStorage.setItem('app_unlocked', 'true');
-    showToast('App workspace unlocked successfully!');
+    localStorage.setItem('app_unlocked', 'true');
+    showToast('App workspace unlocked & session saved!');
   };
 
   const handleLockApp = () => {
     setIsUnlocked(false);
-    sessionStorage.removeItem('app_unlocked');
+    localStorage.removeItem('app_unlocked');
     showToast('App workspace locked.');
   };
 
@@ -106,12 +163,12 @@ export default function App() {
 
   const handleAddToPrintQueue = (labelItem) => {
     setPrintQueue((prev) => [...prev, labelItem]);
-    showToast(`Added label (${labelItem.quantity || 1} copies) to Print Queue!`);
+    showToast(`Saved label (${labelItem.quantity || 1} copies) to Queue!`);
   };
 
   const handleRemoveItemFromQueue = (indexToRemove) => {
     setPrintQueue((prev) => prev.filter((_, idx) => idx !== indexToRemove));
-    showToast('Removed label design from Print Queue.');
+    showToast('Removed label design from Queue.');
   };
 
   const handleDeleteProduct = (productId) => {
@@ -305,13 +362,16 @@ export default function App() {
         isOpen={isPrintModalOpen}
         onClose={() => setIsPrintModalOpen(false)}
         printQueue={printQueue}
-        onClearQueue={() => setPrintQueue([])}
+        onClearQueue={() => {
+          setPrintQueue([]);
+          localStorage.removeItem('app_print_queue');
+        }}
         onRemoveItemFromQueue={handleRemoveItemFromQueue}
       />
 
       {/* Footer */}
       <footer className="bg-white border-t border-gray-200 py-4 text-center text-xs text-gray-500 flex items-center justify-center gap-2">
-        <span>Shopify Barcode & Retail Packaging Label Generator App • Automatic Downloader Active</span>
+        <span>Shopify Barcode & Retail Packaging Label Generator App • Persistent Data Active</span>
         <button
           onClick={handleLockApp}
           className="text-slate-400 hover:text-slate-700 underline font-medium ml-2"
