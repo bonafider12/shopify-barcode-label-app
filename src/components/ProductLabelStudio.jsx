@@ -67,16 +67,16 @@ export default function ProductLabelStudio({
         <img
           src={customLogo}
           alt="Custom Store Logo"
-          style={{ height: `${(28 * logoScale) / 100}px` }}
-          className="object-contain max-w-[140px]"
+          style={{ height: `${(32 * logoScale) / 100}px` }}
+          className="object-contain max-w-[260px] max-h-[140px]"
         />
       );
     }
     const preset = PRESET_LOGOS.find((p) => p.id === selectedPresetId) || PRESET_LOGOS[0];
     return (
       <div
-        style={{ height: `${(26 * logoScale) / 100}px`, width: `${(85 * logoScale) / 100}px` }}
-        className="flex items-center justify-center shrink-0"
+        style={{ height: `${(30 * logoScale) / 100}px`, width: `${(95 * logoScale) / 100}px` }}
+        className="flex items-center justify-center shrink-0 max-w-[260px]"
         dangerouslySetInnerHTML={{ __html: preset.svg }}
       />
     );
@@ -377,16 +377,34 @@ export default function ProductLabelStudio({
               }`}
             >
               {/* Header Row: Logo & Eco Badge */}
-              <div className="flex items-start justify-between gap-2 mb-2">
+              <div className={`flex items-center gap-2 mb-2 w-full ${
+                logoPosition === 'top-center'
+                  ? 'justify-center'
+                  : logoPosition === 'top-right'
+                  ? 'justify-end'
+                  : 'justify-between'
+              }`}>
+                {logoPosition === 'top-right' && showEcoBadge && ecoBadge && (
+                  <span
+                    style={{ backgroundColor: `${accentColor}15`, color: accentColor, borderColor: `${accentColor}40` }}
+                    className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border tracking-wide whitespace-nowrap mr-auto"
+                  >
+                    {ecoBadge}
+                  </span>
+                )}
                 <div className={`flex items-center ${
-                  logoPosition === 'top-center' ? 'w-full justify-center' : ''
+                  logoPosition === 'top-center'
+                    ? 'justify-center'
+                    : logoPosition === 'top-right'
+                    ? 'justify-end'
+                    : 'justify-start'
                 }`}>
                   {renderLogo()}
                 </div>
-                {showEcoBadge && ecoBadge && logoPosition !== 'top-center' && (
+                {logoPosition !== 'top-right' && logoPosition !== 'top-center' && showEcoBadge && ecoBadge && (
                   <span
                     style={{ backgroundColor: `${accentColor}15`, color: accentColor, borderColor: `${accentColor}40` }}
-                    className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border tracking-wide whitespace-nowrap"
+                    className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border tracking-wide whitespace-nowrap ml-auto"
                   >
                     {ecoBadge}
                   </span>

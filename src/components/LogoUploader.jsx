@@ -237,8 +237,8 @@ export default function LogoUploader({
           </label>
           <input
             type="range"
-            min="50"
-            max="180"
+            min="30"
+            max="400"
             value={logoScale}
             onChange={(e) => setLogoScale(Number(e.target.value))}
             className="w-full accent-emerald-600 cursor-pointer h-1.5 bg-gray-200 rounded-lg"
