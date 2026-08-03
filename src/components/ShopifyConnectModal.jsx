@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { ShoppingBag, Upload, Key, X, RefreshCw, Globe, CheckCircle2, AlertCircle, FileSpreadsheet, ArrowRight } from 'lucide-react';
+import { ShoppingBag, Upload, Key, X, RefreshCw, Globe, CheckCircle2, AlertCircle, FileSpreadsheet, ArrowRight, Zap } from 'lucide-react';
 import { fetchShopifyProducts } from '../utils/shopifyApi';
 import { parseShopifyCSV } from '../utils/csvImporter';
 
@@ -7,10 +7,16 @@ export default function ShopifyConnectModal({
   isOpen,
   onClose,
   onImportProducts,
-  onShowToast
+  onShowToast,
+  shopifyStoreDomain,
+  setShopifyStoreDomain,
+  shopifyAccessToken,
+  setShopifyAccessToken,
+  autoSyncEnabled,
+  setAutoSyncEnabled
 }) {
-  const [storeDomain, setStoreDomain] = useState('');
-  const [accessToken, setAccessToken] = useState('');
+  const [storeDomain, setStoreDomain] = useState(shopifyStoreDomain || '');
+  const [accessToken, setAccessToken] = useState(shopifyAccessToken || '');
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState(null);
   const [activeTab, setActiveTab] = useState('api'); // 'api' | 'csv' | 'vercel'
@@ -21,7 +27,7 @@ export default function ShopifyConnectModal({
   const handleApiConnect = async (e) => {
     e.preventDefault();
     if (!storeDomain || !accessToken) {
-      setErrorMessage('Please enter both store domain and Admin API Access Token');
+      setErrorMessage('Please enter both store domain and API Access Token');
       return;
     }
     setIsLoading(true);
@@ -32,12 +38,20 @@ export default function ShopifyConnectModal({
       if (liveProducts.length === 0) {
         setErrorMessage('Connected successfully, but no products were found in this Shopify store.');
       } else {
+        // Save credentials for automatic sync
+        setShopifyStoreDomain(storeDomain);
+        setShopifyAccessToken(accessToken);
+        localStorage.setItem('shopify_domain', storeDomain);
+        localStorage.setItem('shopify_token', accessToken);
+        localStorage.setItem('shopify_autosync', 'true');
+        setAutoSyncEnabled(true);
+
         onImportProducts(liveProducts);
-        onShowToast(`Successfully imported ${liveProducts.length} live products from ${storeDomain}!`);
+        onShowToast(`Downloaded ${liveProducts.length} live products automatically from ${storeDomain}!`);
         onClose();
       }
     } catch (err) {
-      setErrorMessage(err.message || 'Failed to connect to Shopify Admin API. Verify credentials & CORS setup.');
+      setErrorMessage(err.message || 'Failed to download from Shopify API.');
     } finally {
       setIsLoading(false);
     }
@@ -59,7 +73,7 @@ export default function ShopifyConnectModal({
             setErrorMessage('Could not find product rows in CSV file.');
           }
         } catch (err) {
-          setErrorMessage('Error parsing CSV file. Make sure it is a valid Shopify Products Export CSV.');
+          setErrorMessage('Error parsing CSV file.');
         }
       };
       reader.readAsText(file);
@@ -77,8 +91,8 @@ export default function ShopifyConnectModal({
               🛍️
             </div>
             <div>
-              <h3 className="font-extrabold text-base text-white">Connect Shopify Store & Vercel</h3>
-              <p className="text-xs text-slate-400">Sync live products & deploy your barcode app online</p>
+              <h3 className="font-extrabold text-base text-white">Automatic Live Shopify Downloader</h3>
+              <p className="text-xs text-slate-400">Sync store products & variants automatically</p>
             </div>
           </div>
           <button
@@ -99,8 +113,8 @@ export default function ShopifyConnectModal({
                 : 'border-transparent hover:text-gray-900'
             }`}
           >
-            <Globe className="w-4 h-4 text-emerald-600" />
-            Live Shopify Admin API
+            <Zap className="w-4 h-4 text-emerald-600" />
+            Automatic Download & Sync
           </button>
 
           <button
@@ -124,7 +138,7 @@ export default function ShopifyConnectModal({
             }`}
           >
             <ArrowRight className="w-4 h-4 text-emerald-600" />
-            Deploy to Vercel
+            Vercel Deployment
           </button>
         </div>
 
@@ -132,7 +146,7 @@ export default function ShopifyConnectModal({
         <div className="p-6 space-y-4">
           
           {errorMessage && (
-            <div className="bg-rose-50 border border-rose-200 text-rose-800 p-3 rounded-xl text-xs flex items-start gap-2">
+            <div className="bg-rose-50 border border-rose-200 text-rose-800 p-3.5 rounded-xl text-xs flex items-start gap-2 leading-relaxed">
               <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
               <span>{errorMessage}</span>
             </div>
@@ -142,11 +156,11 @@ export default function ShopifyConnectModal({
             <form onSubmit={handleApiConnect} className="space-y-4">
               <div>
                 <label className="text-xs font-bold text-gray-800 block mb-1">
-                  Shopify Store Domain (.myshopify.com)
+                  Shopify Store Domain
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g. my-awesome-store.myshopify.com"
+                  placeholder="midwestturftech.com or midwestturftech.myshopify.com"
                   value={storeDomain}
                   onChange={(e) => setStoreDomain(e.target.value)}
                   className="w-full text-xs p-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-emerald-500 outline-none"
@@ -155,7 +169,7 @@ export default function ShopifyConnectModal({
 
               <div>
                 <label className="text-xs font-bold text-gray-800 block mb-1">
-                  Admin API Access Token (`shpat_...`)
+                  API Access Token (`shpat_...` or `shpka_...`)
                 </label>
                 <input
                   type="password"
@@ -164,25 +178,46 @@ export default function ShopifyConnectModal({
                   onChange={(e) => setAccessToken(e.target.value)}
                   className="w-full text-xs p-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-emerald-500 outline-none font-mono"
                 />
-                <span className="text-[10px] text-gray-400 block mt-1">
-                  Generated in Shopify Admin &gt; Settings &gt; Apps &gt; Develop Apps &gt; Admin API access tokens (requires `read_products` scope).
+                <span className="text-[10px] text-gray-500 block mt-1">
+                  From Shopify Admin Dev Dashboard &gt; Install App (or Storefront API token).
                 </span>
+              </div>
+
+              <div className="bg-emerald-50 p-3 rounded-xl border border-emerald-200 text-emerald-950 text-xs flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <div className="font-bold flex items-center gap-1.5 text-emerald-900">
+                    <Zap className="w-3.5 h-3.5 text-emerald-600" />
+                    Automatic Background Downloader
+                  </div>
+                  <p className="text-[11px] text-emerald-800">
+                    Automatically downloads fresh product listings whenever you open the app.
+                  </p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={autoSyncEnabled}
+                  onChange={(e) => {
+                    setAutoSyncEnabled(e.target.checked);
+                    localStorage.setItem('shopify_autosync', e.target.checked ? 'true' : 'false');
+                  }}
+                  className="w-4 h-4 accent-emerald-600 cursor-pointer"
+                />
               </div>
 
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 px-4 rounded-xl flex items-center justify-center gap-2 shadow-lg transition-all"
+                className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3.5 px-4 rounded-xl flex items-center justify-center gap-2 shadow-lg transition-all text-xs"
               >
                 {isLoading ? (
                   <>
                     <RefreshCw className="w-4 h-4 animate-spin" />
-                    Querying Shopify GraphQL API...
+                    Downloading Live Store Inventory...
                   </>
                 ) : (
                   <>
-                    <Globe className="w-4 h-4" />
-                    Fetch & Sync Live Shopify Products
+                    <Zap className="w-4 h-4" />
+                    Download & Sync Live Products Now
                   </>
                 )}
               </button>
@@ -208,7 +243,7 @@ export default function ShopifyConnectModal({
                     Upload Shopify `products_export.csv`
                   </span>
                   <span className="text-xs text-gray-500 max-w-sm">
-                    Export your catalog from Shopify Admin &gt; Products &gt; Export &gt; All Products (CSV), then drop it here to import instantly!
+                    Export your catalog from Shopify Admin &gt; Products &gt; Export &gt; CSV, drop it here to import.
                   </span>
                 </div>
               </div>
@@ -223,15 +258,7 @@ export default function ShopifyConnectModal({
                   1-Click Vercel Online Hosting Ready
                 </div>
                 <p className="text-slate-300 leading-relaxed">
-                  This app includes an official <code className="bg-slate-800 text-emerald-300 px-1 py-0.5 rounded">vercel.json</code> deployment configuration and Vite single-page build!
-                </p>
-              </div>
-
-              <div className="space-y-2 font-mono bg-gray-50 p-3 rounded-xl border border-gray-200">
-                <div className="font-sans font-bold text-gray-900">Deployment Commands for Vercel CLI:</div>
-                <div className="text-emerald-700 font-bold">npx vercel</div>
-                <p className="font-sans text-gray-500 text-[11px]">
-                  Or push this folder to your GitHub repo and import it directly inside your Vercel Dashboard (<a href="https://vercel.com/new" target="_blank" rel="noreferrer" className="text-emerald-600 underline">vercel.com/new</a>).
+                  Includes serverless proxy <code className="bg-slate-800 text-emerald-300 px-1 py-0.5 rounded">/api/shopify.js</code> for zero CORS blocks.
                 </p>
               </div>
             </div>

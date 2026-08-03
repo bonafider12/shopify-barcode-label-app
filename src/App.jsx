@@ -7,7 +7,8 @@ import PrintPreviewModal from './components/PrintPreviewModal';
 import ShopifyConnectModal from './components/ShopifyConnectModal';
 import PasswordAuthLock from './components/PasswordAuthLock';
 import { MOCK_PRODUCTS, PRESET_LOGOS } from './data/mockProducts';
-import { CheckCircle2, Printer, Sparkles, Globe, Lock } from 'lucide-react';
+import { fetchShopifyProducts } from './utils/shopifyApi';
+import { CheckCircle2, Printer, Sparkles, Globe, RefreshCw, Zap } from 'lucide-react';
 
 export default function App() {
   // Password Protection Auth State
@@ -17,6 +18,18 @@ export default function App() {
   const [storedPasscode, setStoredPasscode] = useState(() => {
     return localStorage.getItem('app_passcode') || 'scooter1';
   });
+
+  // Shopify Auto-Sync & Credentials state
+  const [shopifyStoreDomain, setShopifyStoreDomain] = useState(() => {
+    return localStorage.getItem('shopify_domain') || '';
+  });
+  const [shopifyAccessToken, setShopifyAccessToken] = useState(() => {
+    return localStorage.getItem('shopify_token') || '';
+  });
+  const [autoSyncEnabled, setAutoSyncEnabled] = useState(() => {
+    return localStorage.getItem('shopify_autosync') !== 'false';
+  });
+  const [isAutoSyncing, setIsAutoSyncing] = useState(false);
 
   const [activeTab, setActiveTab] = useState('product'); // 'product' | 'shelf' | 'catalog'
   const [products, setProducts] = useState(MOCK_PRODUCTS);
@@ -43,6 +56,30 @@ export default function App() {
       quantity: 10
     }
   ]);
+
+  // Automatic Product Downloader Effect on Startup
+  useEffect(() => {
+    if (isUnlocked && autoSyncEnabled && shopifyStoreDomain && shopifyAccessToken) {
+      triggerAutomaticDownload();
+    }
+  }, [isUnlocked]);
+
+  const triggerAutomaticDownload = async () => {
+    if (!shopifyStoreDomain || !shopifyAccessToken) return;
+    setIsAutoSyncing(true);
+    try {
+      const liveProds = await fetchShopifyProducts(shopifyStoreDomain, shopifyAccessToken);
+      if (liveProds.length > 0) {
+        setProducts(liveProds);
+        setSelectedProduct(liveProds[0]);
+        showToast(`Auto-downloaded ${liveProds.length} live products from ${shopifyStoreDomain}`);
+      }
+    } catch (err) {
+      console.warn('Auto-download background warning:', err);
+    } finally {
+      setIsAutoSyncing(false);
+    }
+  };
 
   const handleUnlockSuccess = () => {
     setIsUnlocked(true);
@@ -164,12 +201,32 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-3">
+            {shopifyStoreDomain && (
+              <button
+                onClick={triggerAutomaticDownload}
+                disabled={isAutoSyncing}
+                className="bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-slate-700 font-bold text-xs px-3.5 py-2.5 rounded-xl flex items-center gap-2 transition-all shrink-0"
+              >
+                {isAutoSyncing ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    Downloading...
+                  </>
+                ) : (
+                  <>
+                    <Zap className="w-3.5 h-3.5" />
+                    Sync Store ({products.length})
+                  </>
+                )}
+              </button>
+            )}
+
             <button
               onClick={() => setIsShopifyModalOpen(true)}
               className="bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-slate-700 font-bold text-xs px-3.5 py-2.5 rounded-xl flex items-center gap-2 transition-all shrink-0"
             >
               <Globe className="w-4 h-4" />
-              Connect Live Shopify Store
+              Store Settings
             </button>
 
             <button
@@ -235,6 +292,12 @@ export default function App() {
         onClose={() => setIsShopifyModalOpen(false)}
         onImportProducts={handleImportShopifyProducts}
         onShowToast={showToast}
+        shopifyStoreDomain={shopifyStoreDomain}
+        setShopifyStoreDomain={setShopifyStoreDomain}
+        shopifyAccessToken={shopifyAccessToken}
+        setShopifyAccessToken={setShopifyAccessToken}
+        autoSyncEnabled={autoSyncEnabled}
+        setAutoSyncEnabled={setAutoSyncEnabled}
       />
 
       {/* Print Preview & Layout Modal */}
@@ -248,7 +311,7 @@ export default function App() {
 
       {/* Footer */}
       <footer className="bg-white border-t border-gray-200 py-4 text-center text-xs text-gray-500 flex items-center justify-center gap-2">
-        <span>Shopify Barcode & Retail Packaging Label Generator App • Powered by Vector SVG Barcode Engine</span>
+        <span>Shopify Barcode & Retail Packaging Label Generator App • Automatic Downloader Active</span>
         <button
           onClick={handleLockApp}
           className="text-slate-400 hover:text-slate-700 underline font-medium ml-2"
