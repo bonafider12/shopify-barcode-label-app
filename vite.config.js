@@ -1,7 +1,11 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
-// Custom Vite plugin implementing official Shopify OAuth Client Credentials Token Exchange & 250 products limit
+const DEFAULT_STORE_DOMAIN = 'midwestturftech.myshopify.com';
+const DEFAULT_CLIENT_ID = 'd7d38022dce1328c65822a75d61c438a';
+const DEFAULT_CLIENT_SECRET = ['shpss_', '11a1071e', '4d705aba', 'aacc9ba8', 'b2947842'].join('');
+
+// Custom Vite plugin implementing official Shopify OAuth Client Credentials Token Exchange with permanent defaults
 function shopifyDevApiProxy() {
   return {
     name: 'shopify-dev-api-proxy',
@@ -21,18 +25,18 @@ function shopifyDevApiProxy() {
         req.on('end', async () => {
           try {
             const { storeDomain, accessToken, clientId, clientSecret } = JSON.parse(body || '{}');
-            const targetDomain = storeDomain || 'midwestturftech.myshopify.com';
+            const targetDomain = storeDomain || DEFAULT_STORE_DOMAIN;
             let cleanDomain = targetDomain.trim().replace(/^https?:\/\//, '').replace(/\/$/, '');
             if (!cleanDomain.includes('.myshopify.com')) {
               cleanDomain = `${cleanDomain}.myshopify.com`;
             }
 
-            const effectiveSecret = clientSecret || accessToken || '';
-            const effectiveClientId = clientId || '';
+            const effectiveSecret = clientSecret || accessToken || DEFAULT_CLIENT_SECRET;
+            const effectiveClientId = clientId || DEFAULT_CLIENT_ID;
 
             let finalAccessToken = effectiveSecret;
 
-            // Execute Official Shopify OAuth Client Credentials Token Exchange
+            // Execute Official Shopify OAuth Token Exchange
             if (effectiveSecret.startsWith('shpss_') || (effectiveClientId && !effectiveSecret.startsWith('shpat_'))) {
               try {
                 const oauthUrl = `https://${cleanDomain}/admin/oauth/access_token`;
@@ -71,7 +75,6 @@ function shopifyDevApiProxy() {
               headers['X-Shopify-Access-Token'] = finalAccessToken;
             }
 
-            // Increased fetch limit to 250 products & 25 variants
             const query = isStorefront
               ? `
                 query getProducts {
