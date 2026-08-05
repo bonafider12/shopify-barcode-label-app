@@ -1,5 +1,6 @@
 import React from 'react';
-import { encodeCode128, generateQRMatrix } from '../utils/barcodeGenerator';
+import { QRCodeSVG } from 'qrcode.react';
+import Barcode from 'react-barcode';
 
 export default function BarcodeRenderer({
   type = 'CODE128',
@@ -10,80 +11,56 @@ export default function BarcodeRenderer({
   backgroundColor = 'transparent',
   className = ''
 }) {
-  if (type === 'QR') {
-    const { matrix, size } = generateQRMatrix(value);
-    const cellSize = Math.max(2, Math.floor(height / size));
-    const svgSize = size * cellSize;
+  const safeValue = value ? String(value).trim() : '123456789';
 
+  if (type === 'QR') {
+    const size = Math.max(48, Math.floor(height * 1.6));
     return (
-      <div className={`flex flex-col items-center ${className}`}>
-        <svg
-          width={svgSize}
-          height={svgSize}
-          viewBox={`0 0 ${size} ${size}`}
-          shapeRendering="crispEdges"
-          style={{ background: backgroundColor }}
-        >
-          {matrix.map((row, r) =>
-            row.map((cell, c) =>
-              cell ? (
-                <rect
-                  key={`${r}-${c}`}
-                  x={c}
-                  y={r}
-                  width={1}
-                  height={1}
-                  fill={color}
-                />
-              ) : null
-            )
-          )}
-        </svg>
+      <div className={`flex flex-col items-center justify-center select-none ${className}`}>
+        <div style={{ background: backgroundColor === 'transparent' ? 'white' : backgroundColor, padding: '2px', borderRadius: '2px' }}>
+          <QRCodeSVG
+            value={safeValue}
+            size={size}
+            fgColor={color}
+            bgColor={backgroundColor === 'transparent' ? '#FFFFFF' : backgroundColor}
+            level="M"
+          />
+        </div>
         {showText && (
-          <span className="text-[9px] font-mono tracking-tight text-gray-600 mt-0.5">
-            {value}
+          <span className="text-[9px] font-mono tracking-tight text-gray-700 mt-1 truncate max-w-[140px]">
+            {safeValue}
           </span>
         )}
       </div>
     );
   }
 
-  // Linear Barcode (Code128 / EAN13 / UPCA)
-  const bitPattern = encodeCode128(value);
-  const barWidth = 1.6;
-  const svgWidth = bitPattern.length * barWidth;
+  // Determine appropriate barcode format for react-barcode
+  // UPCA requires exactly 12 numeric digits. EAN13 requires exactly 12 or 13 numeric digits.
+  // If the string doesn't match these strict specifications, fallback to CODE128 automatically so it never fails!
+  let format = 'CODE128';
+  const isNumericOnly = /^\d+$/.test(safeValue);
+  
+  if (type === 'UPCA' && isNumericOnly && safeValue.length === 12) {
+    format = 'UPC';
+  } else if (type === 'EAN13' && isNumericOnly && (safeValue.length === 12 || safeValue.length === 13)) {
+    format = 'EAN13';
+  }
 
   return (
-    <div className={`flex flex-col items-center select-none ${className}`}>
-      <svg
-        width="100%"
-        height={height}
-        viewBox={`0 0 ${svgWidth} ${height}`}
-        preserveAspectRatio="none"
-        shapeRendering="crispEdges"
-        style={{ background: backgroundColor }}
-      >
-        {bitPattern.split('').map((bit, idx) => {
-          if (bit === '1') {
-            return (
-              <rect
-                key={idx}
-                x={idx * barWidth}
-                y={0}
-                width={barWidth}
-                height={height}
-                fill={color}
-              />
-            );
-          }
-          return null;
-        })}
-      </svg>
-      {showText && (
-        <span className="text-[10px] font-mono font-semibold tracking-wider text-gray-800 mt-0.5 uppercase">
-          {value}
-        </span>
-      )}
+    <div className={`flex flex-col items-center justify-center select-none overflow-hidden max-w-full ${className}`}>
+      <Barcode
+        value={safeValue}
+        format={format}
+        width={1.5}
+        height={Number(height) || 36}
+        displayValue={showText}
+        fontSize={11}
+        font="monospace"
+        margin={0}
+        background={backgroundColor}
+        lineColor={color}
+      />
     </div>
   );
 }

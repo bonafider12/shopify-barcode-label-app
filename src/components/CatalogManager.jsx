@@ -57,6 +57,16 @@ export default function CatalogManager({
     }));
   };
 
+  const handleSetBulkQuantity = (newQty) => {
+    setQuantities((prev) => {
+      const updated = { ...prev };
+      filteredProducts.forEach(p => {
+        updated[p.id] = newQty;
+      });
+      return updated;
+    });
+  };
+
   const handleCreateProduct = (e) => {
     e.preventDefault();
     if (!newTitle) return;
@@ -97,11 +107,11 @@ export default function CatalogManager({
     <div className="space-y-6">
       
       {/* Top Action Bar */}
-      <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm flex flex-col xl:flex-row xl:items-center justify-between gap-4">
         
-        <div className="flex-1 flex flex-col sm:flex-row items-center gap-3">
+        <div className="flex-1 flex flex-col sm:flex-row items-center gap-3 flex-wrap">
           {/* Search Box */}
-          <div className="relative w-full sm:w-72">
+          <div className="relative w-full sm:w-64">
             <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
@@ -113,11 +123,11 @@ export default function CatalogManager({
           </div>
 
           {/* Category Filter */}
-          <div className="w-full sm:w-48">
+          <div className="w-full sm:w-44">
             <select
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
-              className="w-full text-xs p-2 rounded-xl border border-gray-300 bg-white focus:ring-2 focus:ring-emerald-500 outline-none"
+              className="w-full text-xs p-2 rounded-xl border border-gray-300 bg-white focus:ring-2 focus:ring-emerald-500 outline-none font-medium"
             >
               {categories.map((cat) => (
                 <option key={cat} value={cat}>
@@ -125,6 +135,21 @@ export default function CatalogManager({
                 </option>
               ))}
             </select>
+          </div>
+
+          {/* Quick Bulk Quantity Setter */}
+          <div className="w-full sm:w-auto flex items-center gap-1.5 bg-gray-50 px-3 py-1.5 rounded-xl border border-gray-200 text-xs shrink-0">
+            <span className="font-bold text-gray-700 mr-1">Batch Qty:</span>
+            {[1, 5, 10, 30].map((num) => (
+              <button
+                key={num}
+                onClick={() => handleSetBulkQuantity(num)}
+                className="px-2.5 py-1 rounded-lg bg-white border border-gray-300 hover:border-emerald-500 font-bold text-gray-800 hover:text-emerald-700 hover:bg-emerald-50 transition-all shadow-2xs text-[11px]"
+                title={`Set print count to ${num} copies for all items in list`}
+              >
+                {num}x
+              </button>
+            ))}
           </div>
         </div>
 

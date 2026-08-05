@@ -1,7 +1,8 @@
 export const LABEL_PRESETS = [
+  // --- THERMAL ROLL PRESETS ---
   {
     id: "brother_dk_1247",
-    name: "Brother DK-1247 (Large Box & Packaging 4\" x 6\")",
+    name: "Brother DK-1247 / Rollo 4\" x 6\" (Shipping & Box Tag)",
     type: "THERMAL",
     category: "Product Packaging",
     dimensions: "4.0\" x 6.0\"",
@@ -9,7 +10,19 @@ export const LABEL_PRESETS = [
     heightMm: 152.4,
     labelsPerPage: 1,
     paperSize: "ROLL",
-    description: "Brother QL continuous roll format for large retail packaging boxes & shipping labels."
+    description: "Standard 4x6 continuous thermal roll format for shipping, large retail boxes & inventory crates."
+  },
+  {
+    id: "dymo_30334",
+    name: "Dymo 30334 / Rollo / Zebra 2.25\" x 1.25\"",
+    type: "THERMAL",
+    category: "Product Packaging",
+    dimensions: "2.25\" x 1.25\"",
+    widthMm: 57.1,
+    heightMm: 31.7,
+    labelsPerPage: 1,
+    paperSize: "ROLL",
+    description: "Most common thermal barcode roll label for retail clothing, equipment, and shelves."
   },
   {
     id: "brother_dk_1201",
@@ -45,11 +58,37 @@ export const LABEL_PRESETS = [
     heightMm: 62.0,
     labelsPerPage: 1,
     paperSize: "ROLL",
-    description: "Compact Brother QL barcode tag for small cosmetics, jewelry & bottle labels."
+    description: "Compact Brother QL barcode tag for small cosmetics, hardware & bottle labels."
   },
   {
+    id: "dymo_30332",
+    name: "Dymo 30332 / Zebra 1.0\" x 1.0\" (Mini Square QR Tag)",
+    type: "THERMAL",
+    category: "Product Packaging",
+    dimensions: "1.0\" x 1.0\"",
+    widthMm: 25.4,
+    heightMm: 25.4,
+    labelsPerPage: 1,
+    paperSize: "ROLL",
+    description: "Ultra-compact square label perfect for QR codes, jewelry, parts & small price badges."
+  },
+  {
+    id: "zebra_2x1",
+    name: "Small Retail Barcode Tag (2.0\" x 1.0\")",
+    type: "THERMAL",
+    category: "Product Packaging",
+    dimensions: "2.0\" x 1.0\"",
+    widthMm: 50.8,
+    heightMm: 25.4,
+    labelsPerPage: 1,
+    paperSize: "ROLL",
+    description: "Compact thermal roll label ideal for retail merchandising, tags, and barcode inventory."
+  },
+
+  // --- AVERY & STANDARD LETTER SHEET PRESETS ---
+  {
     id: "avery_5160",
-    name: "Avery 5160 (Standard Address / Product)",
+    name: "Avery 5160 / 8160 (30 Labels/Sheet - Standard Retail)",
     type: "SHEET",
     category: "Product Packaging",
     dimensions: "2.625\" x 1.0\"",
@@ -63,11 +102,29 @@ export const LABEL_PRESETS = [
     gapHorizontalMm: 3.5,
     gapVerticalMm: 0,
     paperSize: "LETTER",
-    description: "30 labels per sheet (3 columns x 10 rows) on Letter size paper."
+    description: "Industry standard 30 labels per sheet (3 columns x 10 rows) on 8.5x11 Letter paper."
+  },
+  {
+    id: "avery_5162",
+    name: "Avery 5162 / 8162 (14 Labels/Sheet - Medium Product & Bin)",
+    type: "SHEET",
+    category: "Product Packaging",
+    dimensions: "4.0\" x 1.33\"",
+    widthMm: 101.6,
+    heightMm: 33.8,
+    labelsPerPage: 14,
+    columns: 2,
+    rows: 7,
+    marginTopMm: 20,
+    marginLeftMm: 4.0,
+    gapHorizontalMm: 4.0,
+    gapVerticalMm: 0,
+    paperSize: "LETTER",
+    description: "14 medium labels per sheet (2 cols x 7 rows). Great for longer SKU titles and bin tags."
   },
   {
     id: "avery_5163",
-    name: "Avery 5163 (Large Product Packaging & Shipping)",
+    name: "Avery 5163 / 8163 (10 Labels/Sheet - Large Packaging)",
     type: "SHEET",
     category: "Product Packaging",
     dimensions: "4.0\" x 2.0\"",
@@ -81,36 +138,32 @@ export const LABEL_PRESETS = [
     gapHorizontalMm: 3.0,
     gapVerticalMm: 0,
     paperSize: "LETTER",
-    description: "10 large retail packaging labels per sheet (2 columns x 5 rows)."
+    description: "10 large retail packaging labels per sheet (2 columns x 5 rows) on Letter paper."
   },
   {
-    id: "dymo_30334",
-    name: "Dymo 30334 / Zebra 2.25\" x 1.25\"",
-    type: "THERMAL",
+    id: "avery_5167",
+    name: "Avery 5167 (80 Labels/Sheet - Mini Return & SKU Tag)",
+    type: "SHEET",
     category: "Product Packaging",
-    dimensions: "2.25\" x 1.25\"",
-    widthMm: 57.1,
-    heightMm: 31.7,
-    labelsPerPage: 1,
-    paperSize: "ROLL",
-    description: "Standard continuous roll format for Dymo, Rollo, and Zebra thermal barcode printers."
+    dimensions: "1.75\" x 0.5\"",
+    widthMm: 44.5,
+    heightMm: 12.7,
+    labelsPerPage: 80,
+    columns: 4,
+    rows: 20,
+    marginTopMm: 12.7,
+    marginLeftMm: 7.0,
+    gapHorizontalMm: 3.0,
+    gapVerticalMm: 0,
+    paperSize: "LETTER",
+    description: "80 compact labels per sheet (4 cols x 20 rows). Perfect for mini pricing & barcode inventory."
   },
-  {
-    id: "zebra_2x1",
-    name: "Small Retail Tag (2.0\" x 1.0\")",
-    type: "THERMAL",
-    category: "Product Packaging",
-    dimensions: "2.0\" x 1.0\"",
-    widthMm: 50.8,
-    heightMm: 25.4,
-    labelsPerPage: 1,
-    paperSize: "ROLL",
-    description: "Compact thermal roll label ideal for small jewelry, cosmetics, or accessory tags."
-  },
+
+  // --- SHELF TALKER PRESETS ---
   {
     id: "shelf_talker_4x2",
     name: "Retail Shelf Talker Tag (4.0\" x 2.25\")",
-    type: "SHEET_OR_THERMAL",
+    type: "SHEET",
     category: "Shelf Edge Label",
     dimensions: "4.0\" x 2.25\"",
     widthMm: 101.6,
@@ -128,7 +181,7 @@ export const LABEL_PRESETS = [
   {
     id: "shelf_edge_3x1_5",
     name: "Standard Shelf Strip Edge Tag (3.0\" x 1.25\")",
-    type: "SHEET_OR_THERMAL",
+    type: "SHEET",
     category: "Shelf Edge Label",
     dimensions: "3.0\" x 1.25\"",
     widthMm: 76.2,

@@ -86,6 +86,18 @@ export default function App() {
     ];
   });
 
+  // 6. Persistent Print Job History Archive (Saved in localStorage)
+  const [printHistory, setPrintHistory] = useState(() => {
+    const saved = localStorage.getItem('app_print_history');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      } catch (e) {}
+    }
+    return [];
+  });
+
   // Automatically persist products changes to localStorage
   useEffect(() => {
     try {
@@ -103,6 +115,15 @@ export default function App() {
       console.warn('localStorage save queue notice:', e);
     }
   }, [printQueue]);
+
+  // Automatically persist print history to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('app_print_history', JSON.stringify(printHistory));
+    } catch (e) {
+      console.warn('localStorage save history notice:', e);
+    }
+  }, [printHistory]);
 
   // Automatically persist custom logo to localStorage
   useEffect(() => {
@@ -175,6 +196,39 @@ export default function App() {
   const handleRemoveItemFromQueue = (indexToRemove) => {
     setPrintQueue((prev) => prev.filter((_, idx) => idx !== indexToRemove));
     showToast('Removed label design from Queue.');
+  };
+
+  const handleUpdateItemQuantity = (index, newQty) => {
+    setPrintQueue((prev) => {
+      const copy = [...prev];
+      if (copy[index]) {
+        copy[index] = { ...copy[index], quantity: Math.max(1, parseInt(newQty, 10) || 1) };
+      }
+      return copy;
+    });
+  };
+
+  const handleSaveToHistory = (jobRecord) => {
+    setPrintHistory((prev) => [jobRecord, ...prev]);
+    showToast(`Print job archived to History (${jobRecord.totalLabels} labels printed)`);
+  };
+
+  const handleDeleteHistoryItem = (jobId) => {
+    setPrintHistory((prev) => prev.filter((h) => h.id !== jobId));
+    showToast('Deleted print log from archive.');
+  };
+
+  const handleClearHistory = () => {
+    setPrintHistory([]);
+    localStorage.removeItem('app_print_history');
+    showToast('Print history archive cleared.');
+  };
+
+  const handleReloadHistoryJob = (job) => {
+    if (Array.isArray(job.queue) && job.queue.length > 0) {
+      setPrintQueue(job.queue);
+      showToast(`Loaded ${job.queue.length} items from previous print run into Queue!`);
+    }
   };
 
   const handleDeleteProduct = (productId) => {
@@ -373,6 +427,12 @@ export default function App() {
           localStorage.removeItem('app_print_queue');
         }}
         onRemoveItemFromQueue={handleRemoveItemFromQueue}
+        onUpdateItemQuantity={handleUpdateItemQuantity}
+        printHistory={printHistory}
+        onSaveToHistory={handleSaveToHistory}
+        onDeleteHistoryItem={handleDeleteHistoryItem}
+        onClearHistory={handleClearHistory}
+        onReloadHistoryJob={handleReloadHistoryJob}
       />
 
       {/* Footer */}
