@@ -462,9 +462,14 @@ export default function PrintPreviewModal({
                       </div>
 
                       {/* Title */}
-                      <div className="font-extrabold text-gray-900 line-clamp-1 leading-tight my-1">
+                      <div className={`font-extrabold text-gray-900 line-clamp-1 leading-tight my-1 ${item.fontStyle || ''}`}>
                         {item.title || item.product?.title || 'Product Label'}
                       </div>
+                      {item.customNote && selectedPreset.columns !== 4 && (
+                        <div className="text-[9px] font-mono font-bold text-gray-700 bg-gray-100 px-1 py-0.5 rounded truncate">
+                          {item.customNote}
+                        </div>
+                      )}
 
                       {/* Barcode */}
                       <div className="mt-1 pt-1 border-t border-gray-100 flex items-center justify-center w-full overflow-hidden">
@@ -544,7 +549,12 @@ export default function PrintPreviewModal({
                   {renderLogo(item)}
                   <span className="font-black text-sm">${Number(item.price).toFixed(2)}</span>
                 </div>
-                <div className="font-extrabold text-xs text-center line-clamp-1 my-1 w-full">{item.title || item.product?.title}</div>
+                <div className={`font-extrabold text-xs text-center line-clamp-1 my-1 w-full ${item.fontStyle || ''}`}>{item.title || item.product?.title}</div>
+                {item.customNote && (
+                  <div className="text-[10px] font-mono font-bold text-gray-800 my-0.5 text-center w-full truncate">
+                    {item.customNote}
+                  </div>
+                )}
                 <div className="w-full flex items-center justify-center overflow-hidden">
                   <BarcodeRenderer
                     type={item.barcodeType || 'CODE128'}
@@ -572,9 +582,14 @@ export default function PrintPreviewModal({
                   {selectedPreset.columns !== 4 && renderLogo(item)}
                   <span className="font-extrabold text-xs">${Number(item.price).toFixed(2)}</span>
                 </div>
-                <div className="font-bold text-xs line-clamp-1 text-gray-900">{item.title || item.product?.title}</div>
+                <div className={`font-bold text-xs line-clamp-1 text-gray-900 ${item.fontStyle || ''}`}>{item.title || item.product?.title}</div>
                 {selectedPreset.columns !== 4 && (
                   <div className="text-[10px] text-gray-600 truncate">{item.variant || item.product?.variant || item.sku}</div>
+                )}
+                {item.customNote && selectedPreset.columns !== 4 && (
+                  <div className="text-[9px] font-mono font-bold text-gray-800 bg-gray-100 px-1 py-0.5 rounded truncate my-0.5">
+                    {item.customNote}
+                  </div>
                 )}
                 <div className="w-full mt-1 flex items-center justify-center overflow-hidden">
                   <BarcodeRenderer

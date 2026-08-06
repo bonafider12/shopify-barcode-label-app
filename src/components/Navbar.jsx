@@ -7,6 +7,8 @@ export default function Navbar({
   selectedProductsCount = 0,
   onOpenPrintModal,
   onOpenShopifyConnectModal,
+  onOpenBackupModal,
+  onOpenScannerModal,
   onLockApp
 }) {
   return (
@@ -75,13 +77,31 @@ export default function Navbar({
           </nav>
 
           {/* Actions: Connect Shopify, Lock App, Print Queue */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <button
+              onClick={onOpenBackupModal}
+              title="Share labels across computers (Export & Import)"
+              className="bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-700 font-bold text-xs px-2.5 py-2 rounded-lg flex items-center gap-1 transition-all shadow-xs"
+            >
+              <span>💾</span>
+              <span className="hidden md:inline">Share Workspace</span>
+            </button>
+
+            <button
+              onClick={onOpenScannerModal}
+              title="USB / Bluetooth Barcode Scanner Gun Mode"
+              className="bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-slate-700 font-bold text-xs px-2.5 py-2 rounded-lg flex items-center gap-1 transition-all shadow-xs"
+            >
+              <span>🔫</span>
+              <span className="hidden sm:inline">Scan Mode</span>
+            </button>
+
             <button
               onClick={onOpenShopifyConnectModal}
-              className="bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-slate-700 font-bold text-xs px-3 py-2 rounded-lg flex items-center gap-1.5 transition-all"
+              className="bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-slate-700 font-bold text-xs px-2.5 py-2 rounded-lg flex items-center gap-1.5 transition-all"
             >
               <Globe className="w-3.5 h-3.5" />
-              Shopify / Vercel
+              <span className="hidden sm:inline">Shopify Sync</span>
             </button>
 
             <button
@@ -94,10 +114,10 @@ export default function Navbar({
 
             <button
               onClick={onOpenPrintModal}
-              className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs px-4 py-2 rounded-lg flex items-center gap-2 shadow-lg shadow-emerald-500/20 transition-all hover:scale-[1.02] active:scale-95"
+              className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-xs px-3.5 py-2 rounded-lg flex items-center gap-1.5 shadow-lg shadow-emerald-500/20 transition-all hover:scale-[1.02] active:scale-95 ml-1"
             >
               <Printer className="w-4 h-4" />
-              Print Labels Sheet
+              <span>Print Sheet</span>
             </button>
           </div>
         </div>

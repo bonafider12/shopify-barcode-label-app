@@ -31,8 +31,9 @@ export default function ProductLabelStudio({
   const [barcode, setBarcode] = useState(selectedProduct?.barcode || '');
   const [barcodeType, setBarcodeType] = useState(selectedProduct?.barcodeType || 'CODE128');
   const [netWeight, setNetWeight] = useState(selectedProduct?.netWeight || '');
-  const [origin, setOrigin] = useState(selectedProduct?.origin || '');
   const [ecoBadge, setEcoBadge] = useState(selectedProduct?.ecoBadge || '');
+  const [customNote, setCustomNote] = useState(selectedProduct?.customNote || 'Exp: 12/2026 • Lot #408A');
+  const [fontStyle, setFontStyle] = useState('font-sans'); // font-sans | font-mono | font-serif
 
   // Styling & Toggles
   const [accentColor, setAccentColor] = useState('#10b981'); // Emerald
@@ -58,6 +59,7 @@ export default function ProductLabelStudio({
     setNetWeight(prod.netWeight || '');
     setOrigin(prod.origin || '');
     setEcoBadge(prod.ecoBadge || '');
+    setCustomNote(prod.customNote || 'Exp: 12/2026 • Lot #408A');
   };
 
   // Helper for logo SVG/Image rendering
@@ -228,6 +230,20 @@ export default function ProductLabelStudio({
                 className="w-full text-xs p-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-emerald-500 outline-none"
               />
             </div>
+
+            <div className="sm:col-span-3">
+              <label className="text-xs font-bold text-emerald-800 block mb-1 flex items-center justify-between">
+                <span>✍️ Custom Label Note (Dates, Lot Code, Batch #, Warranty)</span>
+                <span className="text-[10px] text-gray-500 font-normal">Appears on label above barcode</span>
+              </label>
+              <input
+                type="text"
+                value={customNote}
+                onChange={(e) => setCustomNote(e.target.value)}
+                placeholder="e.g., Exp: 12/2026 • Batch #104 • Made in USA"
+                className="w-full text-xs font-mono bg-emerald-50/50 border border-emerald-300 p-2.5 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none text-gray-900 shadow-inner"
+              />
+            </div>
           </div>
         </div>
 
@@ -291,6 +307,19 @@ export default function ProductLabelStudio({
                 <option value="heavy-retail">Heavy Retail Frame</option>
                 <option value="dashed-cut">Dashed Cut Line</option>
                 <option value="none">Clean Borderless</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="text-xs font-semibold text-gray-700 block mb-1">Typography Font Style</label>
+              <select
+                value={fontStyle}
+                onChange={(e) => setFontStyle(e.target.value)}
+                className="w-full text-xs p-2 rounded-lg border border-gray-300 bg-white focus:ring-2 focus:ring-emerald-500 outline-none font-medium"
+              >
+                <option value="font-sans">Standard Modern (Clean Sans)</option>
+                <option value="font-mono">Industrial Warehouse (Monospaced)</option>
+                <option value="font-serif">Classic Retail (Elegant Serif)</option>
               </select>
             </div>
           </div>
@@ -360,7 +389,7 @@ export default function ProductLabelStudio({
                 borderColor: borderStyle === 'top-accent' ? accentColor : undefined,
                 borderTopColor: borderStyle === 'top-accent' ? accentColor : undefined,
               }}
-              className={`bg-white text-slate-900 p-4 transition-all duration-200 shadow-lg relative flex flex-col justify-between overflow-hidden ${
+              className={`bg-white text-slate-900 p-4 transition-all duration-200 shadow-lg relative flex flex-col justify-between overflow-hidden ${fontStyle} ${
                 borderStyle === 'rounded-solid'
                   ? 'rounded-xl border-2 border-gray-900'
                   : borderStyle === 'heavy-retail'
@@ -435,6 +464,11 @@ export default function ProductLabelStudio({
                   <span>{variantName}</span>
                   {netWeight && <span className="text-[10px] text-gray-500">{netWeight}</span>}
                 </div>
+                {customNote && (
+                  <div className="text-[10px] font-mono font-extrabold bg-gray-100 text-gray-800 px-2 py-0.5 rounded border border-gray-200/80 truncate my-1">
+                    {customNote}
+                  </div>
+                )}
               </div>
 
               {/* Barcode & Footer info */}
@@ -479,6 +513,8 @@ export default function ProductLabelStudio({
                 selectedPresetId: selectedPresetId,
                 accentColor: accentColor,
                 borderStyle: borderStyle,
+                customNote: customNote,
+                fontStyle: fontStyle,
                 quantity: 10
               })}
               className="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold py-3 px-4 rounded-xl flex items-center justify-center gap-2 shadow-lg transition-all"

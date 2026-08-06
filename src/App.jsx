@@ -6,6 +6,8 @@ import CatalogManager from './components/CatalogManager';
 import PrintPreviewModal from './components/PrintPreviewModal';
 import ShopifyConnectModal from './components/ShopifyConnectModal';
 import PasswordAuthLock from './components/PasswordAuthLock';
+import BackupRestoreModal from './components/BackupRestoreModal';
+import HardwareScannerModal from './components/HardwareScannerModal';
 import { MOCK_PRODUCTS, PRESET_LOGOS } from './data/mockProducts';
 import { fetchShopifyProducts } from './utils/shopifyApi';
 import { CheckCircle2, Printer, Sparkles, Globe, RefreshCw, Zap } from 'lucide-react';
@@ -60,6 +62,8 @@ export default function App() {
   // Modals state
   const [isShopifyModalOpen, setIsShopifyModalOpen] = useState(false);
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
+  const [isBackupModalOpen, setIsBackupModalOpen] = useState(false);
+  const [isScannerModalOpen, setIsScannerModalOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
 
   // 5. Persistent Print Queue & Created Labels (Saved in localStorage)
@@ -231,6 +235,16 @@ export default function App() {
     }
   };
 
+  const handleRestoreWorkspace = (restoredData) => {
+    if (restoredData.products) setProducts(restoredData.products);
+    if (restoredData.printQueue) setPrintQueue(restoredData.printQueue);
+    if (restoredData.printHistory) setPrintHistory(restoredData.printHistory);
+    if (restoredData.customLogo !== undefined) setCustomLogo(restoredData.customLogo);
+    if (restoredData.shopifyDomain) setShopifyStoreDomain(restoredData.shopifyDomain);
+    if (restoredData.shopifyToken) setShopifyAccessToken(restoredData.shopifyToken);
+    showToast("Workspace fully loaded from backup file!");
+  };
+
   const handleDeleteProduct = (productId) => {
     setProducts((prev) => prev.filter((p) => p.id !== productId));
     if (selectedProduct?.id === productId) {
@@ -293,6 +307,8 @@ export default function App() {
         selectedProductsCount={printQueue.length}
         onOpenPrintModal={() => setIsPrintModalOpen(true)}
         onOpenShopifyConnectModal={() => setIsShopifyModalOpen(true)}
+        onOpenBackupModal={() => setIsBackupModalOpen(true)}
+        onOpenScannerModal={() => setIsScannerModalOpen(true)}
         onLockApp={handleLockApp}
       />
 
@@ -415,6 +431,28 @@ export default function App() {
         setShopifyAccessToken={setShopifyAccessToken}
         autoSyncEnabled={autoSyncEnabled}
         setAutoSyncEnabled={setAutoSyncEnabled}
+      />
+
+      {/* Share & Backup Workspace Modal */}
+      <BackupRestoreModal
+        isOpen={isBackupModalOpen}
+        onClose={() => setIsBackupModalOpen(false)}
+        products={products}
+        printQueue={printQueue}
+        printHistory={printHistory}
+        customLogo={customLogo}
+        onRestoreWorkspace={handleRestoreWorkspace}
+        onShowToast={showToast}
+      />
+
+      {/* Hardware Barcode Scanner Modal */}
+      <HardwareScannerModal
+        isOpen={isScannerModalOpen}
+        onClose={() => setIsScannerModalOpen(false)}
+        products={products}
+        onAddToQueue={handleAddToPrintQueue}
+        onSelectProductForEdit={handleSelectProductForEdit}
+        onShowToast={showToast}
       />
 
       {/* Print Preview & Layout Modal */}
