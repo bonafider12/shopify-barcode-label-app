@@ -1,24 +1,79 @@
 // Zero-config persistent Cloud Workspace Vault using Vercel Backend & JSON Storage API
-// Ensures real-time multi-computer sync without manual file uploads/downloads or CORS errors
+// Ensures real-time multi-computer sync without manual file uploads/downloads or CORS/size errors
 
 const CLOUD_API_BASE = 'https://extendsclass.com/api/json-storage/bin';
 
 /**
+ * Optimizes logo size using client-side canvas downscaling if base64 exceeds 25KB.
+ * Ensures thermal printing logos remain crisp without exceeding cloud storage size ceilings.
+ */
+async function optimizeLogoForCloud(logoDataUrl) {
+  if (!logoDataUrl || typeof logoDataUrl !== 'string') return logoDataUrl;
+  if (logoDataUrl.length < 25000) return logoDataUrl; // Already lightweight (< 25KB)
+
+  return new Promise((resolve) => {
+    try {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const maxDim = 280; // Crisp label print resolution
+        let width = img.width;
+        let height = img.height;
+        if (width > maxDim || height > maxDim) {
+          if (width > height) {
+            height = Math.round((height * maxDim) / width);
+            width = maxDim;
+          } else {
+            width = Math.round((width * maxDim) / height);
+            height = maxDim;
+          }
+        }
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        const compressed = canvas.toDataURL('image/png');
+        resolve(compressed.length < logoDataUrl.length ? compressed : logoDataUrl);
+      };
+      img.onerror = () => resolve(logoDataUrl);
+      img.src = logoDataUrl;
+    } catch (e) {
+      resolve(logoDataUrl);
+    }
+  });
+}
+
+/**
  * Saves the entire app workspace to the live cloud database.
+ * Automatically compresses logos and excludes redundant Shopify catalogs to prevent HTTP 413 Payload Too Large.
  * Routes via same-origin Vercel proxy (/api/vault) first to avoid CORS browser preflight issues.
  */
 export async function saveToCloudVault(workspaceData, existingVaultId = null) {
-  const payload = JSON.stringify({
-    version: "2.0.0",
+  const optimizedLogo = await optimizeLogoForCloud(workspaceData.customLogo);
+
+  // To prevent HTTP 413 (Payload Too Large) on cloud storage bins (which cap around 50KB),
+  // we filter out massive raw Shopify product inventories that already auto-download from Shopify on every device anyway!
+  const customLocalProducts = (workspaceData.products || [])
+    .filter(p => !p.id || (!String(p.id).includes('shopify') && !String(p.id).includes('gid://')))
+    .slice(0, 50);
+
+  // Cap print queue & print history to prevent historical logs from bloating the cloud storage
+  const cleanPrintQueue = (workspaceData.printQueue || []).slice(0, 30);
+  const cleanPrintHistory = (workspaceData.printHistory || []).slice(0, 20);
+
+  const payloadObj = {
+    version: "2.1.0",
     updatedAt: new Date().toISOString(),
-    products: workspaceData.products || [],
-    printQueue: workspaceData.printQueue || [],
-    printHistory: workspaceData.printHistory || [],
-    customLogo: workspaceData.customLogo || null,
+    products: customLocalProducts,
+    printQueue: cleanPrintQueue,
+    printHistory: cleanPrintHistory,
+    customLogo: optimizedLogo || null,
     shopifyDomain: workspaceData.shopifyDomain || null,
     shopifyToken: workspaceData.shopifyToken || null,
     shopifyClientId: workspaceData.shopifyClientId || null
-  });
+  };
+
+  const payload = JSON.stringify(payloadObj);
 
   // 1. Attempt upload through Vercel serverless proxy (/api/vault)
   try {
@@ -28,7 +83,7 @@ export async function saveToCloudVault(workspaceData, existingVaultId = null) {
       body: JSON.stringify({
         action: 'save',
         vaultId: existingVaultId,
-        payload: JSON.parse(payload)
+        payload: payloadObj
       })
     });
 
@@ -41,8 +96,14 @@ export async function saveToCloudVault(workspaceData, existingVaultId = null) {
     if (proxyRes.status !== 404 && !proxyRes.ok) {
       const errorText = await proxyRes.text();
       console.warn('Proxy responded with error, trying fallback:', errorText);
+      if (proxyRes.status === 413 || errorText.includes('413')) {
+        throw new Error("Payload size exceeded cloud storage limit even after compression. Try clearing old print history or using a smaller logo.");
+      }
     }
   } catch (proxyError) {
+    if (proxyError.message && proxyError.message.includes('Payload size exceeded')) {
+      throw proxyError;
+    }
     console.warn('Vercel proxy unreachable (likely running in local mode), falling back to client-side storage:', proxyError.message);
   }
 
@@ -58,6 +119,9 @@ export async function saveToCloudVault(workspaceData, existingVaultId = null) {
         body: payload
       });
       if (!response.ok) {
+        if (response.status === 413) {
+          throw new Error("Payload size (HTTP 413) exceeded cloud storage limit. Your brand presets and logo have been compressed—please try saving again!");
+        }
         throw new Error(`Failed to update Vault ${cleanId} (HTTP ${response.status})`);
       }
       return { id: cleanId, isNew: false, success: true };
@@ -71,6 +135,9 @@ export async function saveToCloudVault(workspaceData, existingVaultId = null) {
         body: payload
       });
       if (!response.ok) {
+        if (response.status === 413) {
+          throw new Error("Payload size (HTTP 413) exceeded cloud storage limit. Your brand presets and logo have been compressed—please try saving again!");
+        }
         throw new Error(`Cloud storage rejected request (HTTP ${response.status})`);
       }
       const resData = await response.json();
@@ -115,7 +182,6 @@ export async function loadFromCloudVault(vaultId) {
       }
     }
     if (proxyRes.status === 404) {
-      // Could mean API route doesn't exist locally OR Vault ID wasn't found
       const data = await proxyRes.json().catch(() => ({}));
       if (data.error && data.error.includes('not found')) {
         throw new Error(`Cloud Vault ID "${cleanId}" was not found. Check the ID and try again.`);

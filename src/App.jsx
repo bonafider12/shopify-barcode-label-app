@@ -166,7 +166,7 @@ export default function App() {
       // Auto-load workspace directly from Cloud Vault
       loadFromCloudVault(targetVaultId)
         .then((restoredData) => {
-          if (restoredData.products && Array.isArray(restoredData.products)) setProducts(restoredData.products);
+          if (restoredData.products && Array.isArray(restoredData.products) && restoredData.products.length > 0) setProducts(restoredData.products);
           if (restoredData.printQueue && Array.isArray(restoredData.printQueue)) setPrintQueue(restoredData.printQueue);
           if (restoredData.printHistory && Array.isArray(restoredData.printHistory)) setPrintHistory(restoredData.printHistory);
           if (restoredData.customLogo !== undefined) setCustomLogo(restoredData.customLogo);
@@ -290,7 +290,7 @@ export default function App() {
   };
 
   const handleRestoreWorkspace = (restoredData) => {
-    if (restoredData.products) setProducts(restoredData.products);
+    if (restoredData.products && restoredData.products.length > 0) setProducts(restoredData.products);
     if (restoredData.printQueue) setPrintQueue(restoredData.printQueue);
     if (restoredData.printHistory) setPrintHistory(restoredData.printHistory);
     if (restoredData.customLogo !== undefined) setCustomLogo(restoredData.customLogo);
