@@ -10,6 +10,7 @@ import BackupRestoreModal from './components/BackupRestoreModal';
 import HardwareScannerModal from './components/HardwareScannerModal';
 import { MOCK_PRODUCTS, PRESET_LOGOS } from './data/mockProducts';
 import { fetchShopifyProducts } from './utils/shopifyApi';
+import { saveToCloudVault, loadFromCloudVault } from './utils/cloudVault';
 import { CheckCircle2, Printer, Sparkles, Globe, RefreshCw, Zap } from 'lucide-react';
 
 export default function App() {
@@ -33,6 +34,12 @@ export default function App() {
   });
   const [autoSyncEnabled, setAutoSyncEnabled] = useState(() => {
     return localStorage.getItem('shopify_autosync') !== 'false';
+  });
+  const [cloudVaultId, setCloudVaultId] = useState(() => {
+    return localStorage.getItem('app_cloud_vault_id') || null;
+  });
+  const [autoCloudSync, setAutoCloudSync] = useState(() => {
+    return localStorage.getItem('app_auto_cloud_sync') !== 'false';
   });
   const [isAutoSyncing, setIsAutoSyncing] = useState(false);
 
@@ -142,12 +149,59 @@ export default function App() {
     }
   }, [customLogo]);
 
-  // Automatic Product Downloader Effect on Startup
+  // Automatic Product Downloader & Cloud Vault Boot-up Effect
   useEffect(() => {
-    if (isUnlocked && autoSyncEnabled && shopifyStoreDomain && shopifyAccessToken) {
+    if (!isUnlocked) return;
+
+    // 1. Check URL for ?vault=... parameter to enable 1-Click Multi-Computer loading
+    const params = new URLSearchParams(window.location.search);
+    const urlVaultId = params.get('vault');
+
+    const targetVaultId = urlVaultId || cloudVaultId;
+    if (targetVaultId) {
+      if (urlVaultId && urlVaultId !== cloudVaultId) {
+        setCloudVaultId(urlVaultId);
+        localStorage.setItem('app_cloud_vault_id', urlVaultId);
+      }
+      // Auto-load workspace directly from Cloud Vault
+      loadFromCloudVault(targetVaultId)
+        .then((restoredData) => {
+          if (restoredData.products && Array.isArray(restoredData.products)) setProducts(restoredData.products);
+          if (restoredData.printQueue && Array.isArray(restoredData.printQueue)) setPrintQueue(restoredData.printQueue);
+          if (restoredData.printHistory && Array.isArray(restoredData.printHistory)) setPrintHistory(restoredData.printHistory);
+          if (restoredData.customLogo !== undefined) setCustomLogo(restoredData.customLogo);
+          showToast(`⚡ Connected & synced live workspace from Cloud Vault (${targetVaultId})!`);
+        })
+        .catch((err) => {
+          console.warn("Cloud Vault background boot notice:", err);
+        });
+    }
+
+    // 2. Trigger Shopify Catalog sync if configured
+    if (autoSyncEnabled && shopifyStoreDomain && shopifyAccessToken) {
       triggerAutomaticDownload();
     }
   }, [isUnlocked]);
+
+  // Real-time automatic Cloud Vault Sync on data modification
+  useEffect(() => {
+    localStorage.setItem('app_auto_cloud_sync', autoCloudSync ? 'true' : 'false');
+  }, [autoCloudSync]);
+
+  useEffect(() => {
+    if (!isUnlocked || !cloudVaultId || !autoCloudSync) return;
+    const timer = setTimeout(() => {
+      saveToCloudVault({
+        products,
+        printQueue,
+        printHistory,
+        customLogo,
+        shopifyDomain: shopifyStoreDomain,
+        shopifyToken: shopifyAccessToken
+      }, cloudVaultId).catch((err) => console.warn("Background auto cloud save notice:", err));
+    }, 2500); // 2.5 seconds debounce to prevent flood
+    return () => clearTimeout(timer);
+  }, [products, printQueue, printHistory, customLogo, cloudVaultId, autoCloudSync, isUnlocked]);
 
   const triggerAutomaticDownload = async () => {
     const domain = shopifyStoreDomain || 'midwestturftech.myshopify.com';
@@ -310,6 +364,7 @@ export default function App() {
         onOpenBackupModal={() => setIsBackupModalOpen(true)}
         onOpenScannerModal={() => setIsScannerModalOpen(true)}
         onLockApp={handleLockApp}
+        cloudVaultId={cloudVaultId}
       />
 
       {/* Main Workspace Container */}
@@ -443,6 +498,13 @@ export default function App() {
         customLogo={customLogo}
         onRestoreWorkspace={handleRestoreWorkspace}
         onShowToast={showToast}
+        cloudVaultId={cloudVaultId}
+        setCloudVaultId={(id) => {
+          setCloudVaultId(id);
+          localStorage.setItem('app_cloud_vault_id', id);
+        }}
+        autoCloudSync={autoCloudSync}
+        setAutoCloudSync={setAutoCloudSync}
       />
 
       {/* Hardware Barcode Scanner Modal */}

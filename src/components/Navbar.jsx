@@ -9,7 +9,8 @@ export default function Navbar({
   onOpenShopifyConnectModal,
   onOpenBackupModal,
   onOpenScannerModal,
-  onLockApp
+  onLockApp,
+  cloudVaultId
 }) {
   return (
     <header className="bg-slate-900 text-white border-b border-slate-800 sticky top-0 z-30 shadow-md">
@@ -80,11 +81,17 @@ export default function Navbar({
           <div className="flex items-center gap-1.5 flex-wrap">
             <button
               onClick={onOpenBackupModal}
-              title="Share labels across computers (Export & Import)"
-              className="bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-700 font-bold text-xs px-2.5 py-2 rounded-lg flex items-center gap-1 transition-all shadow-xs"
+              title="Save & share labels directly in the app across computers"
+              className={`border font-bold text-xs px-3 py-2 rounded-lg flex items-center gap-1.5 transition-all shadow-xs ${
+                cloudVaultId
+                  ? 'bg-emerald-950/80 hover:bg-emerald-900 text-emerald-300 border-emerald-500/50'
+                  : 'bg-slate-800 hover:bg-slate-700 text-cyan-300 border-slate-700'
+              }`}
             >
-              <span>💾</span>
-              <span className="hidden md:inline">Share Workspace</span>
+              <span>{cloudVaultId ? '🟢' : '☁️'}</span>
+              <span className="hidden sm:inline">
+                {cloudVaultId ? `Cloud Vault (${cloudVaultId.slice(0, 6)}...)` : 'Save in App & Share'}
+              </span>
             </button>
 
             <button
