@@ -512,14 +512,27 @@ export default function PrintPreviewModal({
                         </div>
                       )}
 
-                      {/* Barcode */}
-                      <div className="mt-1 pt-1 border-t border-gray-100 flex items-center justify-center w-full overflow-hidden">
-                        <BarcodeRenderer
-                          type={item.barcodeType || 'CODE128'}
-                          value={item.barcode || '123456789'}
-                          showText={selectedPreset.columns !== 4}
-                          height={selectedPreset.columns === 4 ? 16 : 22}
-                        />
+                      {/* Barcode & Optional QR Code */}
+                      <div className="mt-1 pt-1 border-t border-gray-100 flex items-center justify-between gap-1.5 w-full overflow-hidden">
+                        <div className="flex-1 flex items-center justify-center overflow-hidden">
+                          <BarcodeRenderer
+                            type={item.barcodeType || 'CODE128'}
+                            value={item.barcode || '123456789'}
+                            showText={selectedPreset.columns !== 4}
+                            height={selectedPreset.columns === 4 ? 16 : 22}
+                          />
+                        </div>
+                        {item.qrUrl && selectedPreset.columns !== 4 && (
+                          <div className="shrink-0 flex flex-col items-center justify-center border-l border-gray-200 pl-1.5">
+                            <BarcodeRenderer
+                              type="QR"
+                              value={item.qrUrl}
+                              showText={false}
+                              height={24}
+                            />
+                            <span className="text-[7px] font-black text-gray-500 uppercase mt-0.5 tracking-tight">{item.qrLabel || 'Scan Specs'}</span>
+                          </div>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -614,13 +627,26 @@ export default function PrintPreviewModal({
                     {item.customNote}
                   </div>
                 )}
-                <div className="w-full flex items-center justify-center overflow-hidden">
-                  <BarcodeRenderer
-                    type={item.barcodeType || 'CODE128'}
-                    value={item.barcode || '123456789'}
-                    showText={true}
-                    height={Math.max(26, (selectedPreset.heightMm || 30) * 0.9)}
-                  />
+                <div className="w-full flex items-center justify-between gap-2 overflow-hidden mt-1">
+                  <div className="flex-1 flex items-center justify-center overflow-hidden">
+                    <BarcodeRenderer
+                      type={item.barcodeType || 'CODE128'}
+                      value={item.barcode || '123456789'}
+                      showText={true}
+                      height={Math.max(24, (selectedPreset.heightMm || 30) * 0.8)}
+                    />
+                  </div>
+                  {item.qrUrl && (
+                    <div className="shrink-0 flex flex-col items-center justify-center border-l border-gray-300 pl-2">
+                      <BarcodeRenderer
+                        type="QR"
+                        value={item.qrUrl}
+                        showText={false}
+                        height={Math.max(26, (selectedPreset.heightMm || 30) * 0.85)}
+                      />
+                      <span className="text-[8px] font-black text-black uppercase mt-0.5 tracking-tight">{item.qrLabel || 'Scan Specs'}</span>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
@@ -650,13 +676,26 @@ export default function PrintPreviewModal({
                     {item.customNote}
                   </div>
                 )}
-                <div className="w-full mt-1 flex items-center justify-center overflow-hidden">
-                  <BarcodeRenderer
-                    type={item.barcodeType || 'CODE128'}
-                    value={item.barcode || '123456789'}
-                    showText={selectedPreset.columns !== 4}
-                    height={selectedPreset.columns === 4 ? 18 : 28}
-                  />
+                <div className="w-full mt-1 flex items-center justify-between gap-1.5 overflow-hidden">
+                  <div className="flex-1 flex items-center justify-center overflow-hidden">
+                    <BarcodeRenderer
+                      type={item.barcodeType || 'CODE128'}
+                      value={item.barcode || '123456789'}
+                      showText={selectedPreset.columns !== 4}
+                      height={selectedPreset.columns === 4 ? 18 : 26}
+                    />
+                  </div>
+                  {item.qrUrl && selectedPreset.columns !== 4 && (
+                    <div className="shrink-0 flex flex-col items-center justify-center border-l border-gray-200 pl-1.5">
+                      <BarcodeRenderer
+                        type="QR"
+                        value={item.qrUrl}
+                        showText={false}
+                        height={26}
+                      />
+                      <span className="text-[7px] font-black text-gray-800 uppercase mt-0.5 tracking-tight">{item.qrLabel || 'Scan Specs'}</span>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}

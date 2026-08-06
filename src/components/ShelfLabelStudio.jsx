@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Store, MapPin, DollarSign, QrCode, Tag, Award, Sparkles, Printer, Plus, Eye, Zap } from 'lucide-react';
+import { Store, MapPin, DollarSign, QrCode, Tag, Award, Sparkles, Printer, Plus, Eye, Zap, Link, FileText, Wifi, MessageSquare, Mail } from 'lucide-react';
 import BarcodeRenderer from './BarcodeRenderer';
 import SearchableProductSelect from './SearchableProductSelect';
 import { LABEL_PRESETS } from '../data/labelPresets';
@@ -30,6 +30,7 @@ export default function ShelfLabelStudio({
     vendor: vendor,
     headerTheme: headerTheme,
     qrUrl: qrUrl,
+    qrLabel: qrLabel || 'Scan Specs',
     preset: selectedShelfPreset,
     customLogo: customLogo,
     selectedPresetId: selectedPresetId,
@@ -59,6 +60,46 @@ export default function ShelfLabelStudio({
   const [showQR, setShowQR] = useState(true);
   const [showUnitPrice, setShowUnitPrice] = useState(true);
   const [showCompareSave, setShowCompareSave] = useState(true);
+
+  // Multi-Purpose QR Action State
+  const [qrMode, setQrMode] = useState('URL'); // 'URL' | 'MANUAL' | 'WIFI' | 'SMS' | 'EMAIL'
+  const [qrLabel, setQrLabel] = useState('Scan Specs');
+  const [manualUrl, setManualUrl] = useState('https://manuals.midwestturftech.com/parts-diagram.pdf');
+  const [wifiSsid, setWifiSsid] = useState('MidwestTurf-Guest');
+  const [wifiPass, setWifiPass] = useState('TurfTech2026!');
+  const [smsPhone, setSmsPhone] = useState('18005558873');
+  const [smsText, setSmsText] = useState('Hello Service Desk, I need maintenance assistance with this item!');
+  const [emailTo, setEmailTo] = useState('service@midwestturftech.com');
+  const [emailSub, setEmailSub] = useState('Warranty & Parts Inquiry');
+
+  const updateQrConfig = (mode, overrideVals = {}) => {
+    setQrMode(mode);
+    const mUrl = overrideVals.manualUrl ?? manualUrl;
+    const wSsid = overrideVals.wifiSsid ?? wifiSsid;
+    const wPass = overrideVals.wifiPass ?? wifiPass;
+    const sPhone = overrideVals.smsPhone ?? smsPhone;
+    const sText = overrideVals.smsText ?? smsText;
+    const eTo = overrideVals.emailTo ?? emailTo;
+    const eSub = overrideVals.emailSub ?? emailSub;
+    const uUrl = overrideVals.url ?? qrUrl;
+
+    if (mode === 'URL') {
+      setQrLabel('Scan Specs');
+      if (overrideVals.url !== undefined) setQrUrl(uUrl);
+    } else if (mode === 'MANUAL') {
+      setQrLabel('Scan Manual');
+      setQrUrl(mUrl);
+    } else if (mode === 'WIFI') {
+      setQrLabel('Scan WiFi');
+      setQrUrl(`WIFI:T:WPA;S:${wSsid};P:${wPass};;`);
+    } else if (mode === 'SMS') {
+      setQrLabel('Scan SMS');
+      setQrUrl(`sms:${sPhone}?body=${encodeURIComponent(sText)}`);
+    } else if (mode === 'EMAIL') {
+      setQrLabel('Scan Support');
+      setQrUrl(`mailto:${eTo}?subject=${encodeURIComponent(eSub)}`);
+    }
+  };
 
   // Sync selected product
   const handleProductSelect = (prod) => {
@@ -243,6 +284,246 @@ export default function ShelfLabelStudio({
           </div>
         </div>
 
+        {/* 📱 Multi-Purpose QR Code Action Suite */}
+        <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm space-y-4">
+          <div className="flex items-center justify-between border-b border-gray-100 pb-2.5">
+            <h3 className="text-sm font-bold text-gray-800 flex items-center gap-2">
+              <QrCode className="w-4 h-4 text-cyan-600" />
+              Multi-Purpose QR Code Action Suite
+            </h3>
+            <span className="text-[10px] font-black bg-cyan-100 text-cyan-900 px-2 py-0.5 rounded-full uppercase tracking-wider">
+              ⚡ 1-TAP PRESETS
+            </span>
+          </div>
+
+          {/* Preset Selector Grid */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            <button
+              type="button"
+              onClick={() => updateQrConfig('URL')}
+              className={`p-2.5 rounded-xl text-left border transition-all ${
+                qrMode === 'URL'
+                  ? 'bg-cyan-50 border-cyan-500 ring-2 ring-cyan-500/20 text-cyan-900 shadow-sm'
+                  : 'bg-slate-50 border-gray-200 text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              <div className="flex items-center gap-1.5 font-black text-xs">
+                <Link className="w-3.5 h-3.5 text-cyan-600 shrink-0" />
+                <span>Shop / Web Link</span>
+              </div>
+              <p className="text-[10px] text-gray-400 mt-0.5 leading-tight">Standard store page URL</p>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => updateQrConfig('MANUAL')}
+              className={`p-2.5 rounded-xl text-left border transition-all ${
+                qrMode === 'MANUAL'
+                  ? 'bg-emerald-50 border-emerald-500 ring-2 ring-emerald-500/20 text-emerald-900 shadow-sm'
+                  : 'bg-slate-50 border-gray-200 text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              <div className="flex items-center gap-1.5 font-black text-xs">
+                <FileText className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                <span>Service Manual</span>
+              </div>
+              <p className="text-[10px] text-gray-400 mt-0.5 leading-tight">Parts diagrams & PDF specs</p>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => updateQrConfig('WIFI')}
+              className={`p-2.5 rounded-xl text-left border transition-all ${
+                qrMode === 'WIFI'
+                  ? 'bg-amber-50 border-amber-500 ring-2 ring-amber-500/20 text-amber-900 shadow-sm'
+                  : 'bg-slate-50 border-gray-200 text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              <div className="flex items-center gap-1.5 font-black text-xs">
+                <Wifi className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                <span>Shop Guest WiFi</span>
+              </div>
+              <p className="text-[10px] text-gray-400 mt-0.5 leading-tight">1-tap instant connection</p>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => updateQrConfig('SMS')}
+              className={`p-2.5 rounded-xl text-left border transition-all ${
+                qrMode === 'SMS'
+                  ? 'bg-rose-50 border-rose-500 ring-2 ring-rose-500/20 text-rose-900 shadow-sm'
+                  : 'bg-slate-50 border-gray-200 text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              <div className="flex items-center gap-1.5 font-black text-xs">
+                <MessageSquare className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+                <span>Support SMS Text</span>
+              </div>
+              <p className="text-[10px] text-gray-400 mt-0.5 leading-tight">Opens pre-written help text</p>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => updateQrConfig('EMAIL')}
+              className={`p-2.5 rounded-xl text-left border transition-all ${
+                qrMode === 'EMAIL'
+                  ? 'bg-purple-50 border-purple-500 ring-2 ring-purple-500/20 text-purple-900 shadow-sm'
+                  : 'bg-slate-50 border-gray-200 text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              <div className="flex items-center gap-1.5 font-black text-xs">
+                <Mail className="w-3.5 h-3.5 text-purple-600 shrink-0" />
+                <span>Email Service Desk</span>
+              </div>
+              <p className="text-[10px] text-gray-400 mt-0.5 leading-tight">Warranty & reorder inquiries</p>
+            </button>
+
+            <div className="p-2 rounded-xl bg-slate-900 text-slate-300 flex flex-col justify-center border border-slate-800">
+              <div className="text-[10px] uppercase font-black text-emerald-400 text-center">
+                <span>Tag QR Footer Label:</span>
+              </div>
+              <input
+                type="text"
+                value={qrLabel}
+                onChange={(e) => setQrLabel(e.target.value)}
+                maxLength={16}
+                title="Customize text shown below QR code"
+                className="bg-slate-800 text-white font-extrabold text-xs px-2 py-1 rounded border border-slate-700 mt-1 w-full focus:outline-none focus:ring-1 focus:ring-emerald-400 text-center shadow-inner"
+              />
+            </div>
+          </div>
+
+          {/* Dynamic Configuration Inputs based on Selected Mode */}
+          <div className="bg-slate-50 p-4 rounded-xl border border-gray-200/80 space-y-3">
+            {qrMode === 'URL' && (
+              <div>
+                <label className="text-xs font-bold text-gray-700 block mb-1">Store / Product Web Address (URL):</label>
+                <input
+                  type="text"
+                  value={qrUrl}
+                  onChange={(e) => {
+                    setQrUrl(e.target.value);
+                  }}
+                  placeholder="https://yourstore.com/products/item"
+                  className="w-full text-xs p-2.5 rounded-lg border border-gray-300 bg-white focus:ring-2 focus:ring-cyan-500 outline-none font-mono text-cyan-900 font-medium"
+                />
+              </div>
+            )}
+
+            {qrMode === 'MANUAL' && (
+              <div>
+                <label className="text-xs font-bold text-gray-700 block mb-1">Service / Technical Manual Address (PDF/DOC URL):</label>
+                <input
+                  type="text"
+                  value={manualUrl}
+                  onChange={(e) => {
+                    setManualUrl(e.target.value);
+                    updateQrConfig('MANUAL', { manualUrl: e.target.value });
+                  }}
+                  placeholder="https://manuals.yourdomain.com/diagrams/part-sheet.pdf"
+                  className="w-full text-xs p-2.5 rounded-lg border border-gray-300 bg-white focus:ring-2 focus:ring-emerald-500 outline-none font-mono text-emerald-900 font-medium"
+                />
+                <p className="text-[10px] text-gray-500 mt-1.5 font-medium">💡 Customers or technicians scan to open equipment diagrams and maintenance guides instantly on their phone!</p>
+              </div>
+            )}
+
+            {qrMode === 'WIFI' && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-bold text-gray-700 block mb-1">WiFi Network Name (SSID):</label>
+                  <input
+                    type="text"
+                    value={wifiSsid}
+                    onChange={(e) => {
+                      setWifiSsid(e.target.value);
+                      updateQrConfig('WIFI', { wifiSsid: e.target.value });
+                    }}
+                    placeholder="MidwestTurf-Guest"
+                    className="w-full text-xs p-2.5 rounded-lg border border-gray-300 bg-white focus:ring-2 focus:ring-amber-500 outline-none font-bold text-gray-800"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-gray-700 block mb-1">WiFi Network Password:</label>
+                  <input
+                    type="text"
+                    value={wifiPass}
+                    onChange={(e) => {
+                      setWifiPass(e.target.value);
+                      updateQrConfig('WIFI', { wifiPass: e.target.value });
+                    }}
+                    placeholder="Password123!"
+                    className="w-full text-xs p-2.5 rounded-lg border border-gray-300 bg-white focus:ring-2 focus:ring-amber-500 outline-none font-mono text-amber-800 font-medium"
+                  />
+                </div>
+                <p className="sm:col-span-2 text-[10px] text-gray-500 font-medium">💡 When anyone points their iPhone or Android camera at this tag, their phone prompts: <span className="font-extrabold text-amber-700">"Join {wifiSsid} Network"</span> instantly without typing passwords!</p>
+              </div>
+            )}
+
+            {qrMode === 'SMS' && (
+              <div className="space-y-3">
+                <div>
+                  <label className="text-xs font-bold text-gray-700 block mb-1">Shop Support Phone Number:</label>
+                  <input
+                    type="text"
+                    value={smsPhone}
+                    onChange={(e) => {
+                      setSmsPhone(e.target.value);
+                      updateQrConfig('SMS', { smsPhone: e.target.value });
+                    }}
+                    placeholder="18005558873 or 555-123-4567"
+                    className="w-full text-xs p-2.5 rounded-lg border border-gray-300 bg-white focus:ring-2 focus:ring-rose-500 outline-none font-mono text-rose-900 font-bold"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-gray-700 block mb-1">Pre-Filled SMS Message Body:</label>
+                  <input
+                    type="text"
+                    value={smsText}
+                    onChange={(e) => {
+                      setSmsText(e.target.value);
+                      updateQrConfig('SMS', { smsText: e.target.value });
+                    }}
+                    className="w-full text-xs p-2.5 rounded-lg border border-gray-300 bg-white focus:ring-2 focus:ring-rose-500 outline-none font-medium text-gray-800"
+                  />
+                </div>
+                <p className="text-[10px] text-gray-500 font-medium">💡 Scanning opens their phone's messaging app addressed to your shop with this pre-written service inquiry ready to send!</p>
+              </div>
+            )}
+
+            {qrMode === 'EMAIL' && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-bold text-gray-700 block mb-1">Support Email Address:</label>
+                  <input
+                    type="text"
+                    value={emailTo}
+                    onChange={(e) => {
+                      setEmailTo(e.target.value);
+                      updateQrConfig('EMAIL', { emailTo: e.target.value });
+                    }}
+                    placeholder="service@midwestturftech.com"
+                    className="w-full text-xs p-2.5 rounded-lg border border-gray-300 bg-white focus:ring-2 focus:ring-purple-500 outline-none font-mono text-purple-900 font-medium"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-gray-700 block mb-1">Default Email Subject:</label>
+                  <input
+                    type="text"
+                    value={emailSub}
+                    onChange={(e) => {
+                      setEmailSub(e.target.value);
+                      updateQrConfig('EMAIL', { emailSub: e.target.value });
+                    }}
+                    placeholder="Warranty / Part Inquiry"
+                    className="w-full text-xs p-2.5 rounded-lg border border-gray-300 bg-white focus:ring-2 focus:ring-purple-500 outline-none font-bold text-gray-800"
+                  />
+                </div>
+                <p className="sm:col-span-2 text-[10px] text-gray-500 font-medium">💡 Scanning launches their email app directly addressed to your service desk for warranty claims or maintenance appointments!</p>
+              </div>
+            )}
+          </div>
+        </div>
+
       </div>
 
       {/* RIGHT COLUMN: Live Visual Preview of Shelf Talker Tag (5 cols) */}
@@ -337,11 +618,11 @@ export default function ShelfLabelStudio({
                     <div className="flex flex-col items-center">
                       <BarcodeRenderer
                         type="QR"
-                        value={qrUrl}
+                        value={qrUrl || 'https://shopify.com'}
                         showText={false}
                         height={34}
                       />
-                      <span className="text-[8px] font-semibold text-gray-400 uppercase mt-0.5">Scan Specs</span>
+                      <span className="text-[8px] font-black text-gray-600 uppercase mt-0.5 tracking-tight">{qrLabel || 'Scan Specs'}</span>
                     </div>
                   )}
                 </div>
