@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Store, MapPin, DollarSign, QrCode, Tag, Award, Sparkles, Printer, Plus, Eye } from 'lucide-react';
+import { Store, MapPin, DollarSign, QrCode, Tag, Award, Sparkles, Printer, Plus, Eye, Zap } from 'lucide-react';
 import BarcodeRenderer from './BarcodeRenderer';
 import SearchableProductSelect from './SearchableProductSelect';
 import { LABEL_PRESETS } from '../data/labelPresets';
@@ -16,6 +16,31 @@ export default function ShelfLabelStudio({
 }) {
   const shelfPresets = LABEL_PRESETS.filter((p) => p.category === 'Shelf Edge Label');
   const [selectedShelfPreset, setSelectedShelfPreset] = useState(shelfPresets[0]);
+  const [printQty, setPrintQty] = useState(4); // Default quantity for shelf edge tags
+
+  const createCurrentShelfPayload = (qty) => ({
+    product: selectedProduct,
+    title: productTitle,
+    variant: variantName,
+    price: price,
+    compareAtPrice: compareAtPrice,
+    unitPrice: unitPrice,
+    location: location,
+    promoBadge: promoBadge,
+    vendor: vendor,
+    headerTheme: headerTheme,
+    qrUrl: qrUrl,
+    preset: selectedShelfPreset,
+    customLogo: customLogo,
+    selectedPresetId: selectedPresetId,
+    isShelfTalker: true,
+    quantity: Number(qty) || 1
+  });
+
+  const handleInstantQuickPrint = () => {
+    onAddToPrintQueue(createCurrentShelfPayload(printQty));
+    onOpenPrintModal();
+  };
 
   // Form Fields
   const [productTitle, setProductTitle] = useState(selectedProduct?.title || '');
@@ -327,39 +352,70 @@ export default function ShelfLabelStudio({
 
           </div>
 
-          {/* Actions */}
-          <div className="space-y-3">
-            <button
-              onClick={() => onAddToPrintQueue({
-                product: selectedProduct,
-                title: productTitle,
-                variant: variantName,
-                price: price,
-                compareAtPrice: compareAtPrice,
-                unitPrice: unitPrice,
-                location: location,
-                promoBadge: promoBadge,
-                vendor: vendor,
-                headerTheme: headerTheme,
-                qrUrl: qrUrl,
-                preset: selectedShelfPreset,
-                customLogo: customLogo,
-                selectedPresetId: selectedPresetId,
-                isShelfTalker: true,
-                quantity: 4
-              })}
-              className="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold py-3 px-4 rounded-xl flex items-center justify-center gap-2 shadow-lg transition-all"
-            >
-              <Plus className="w-4 h-4" />
-              Add Shelf Tags to Queue (4 copies)
-            </button>
+          {/* Employee Speed Toolbar: One-Tap Quantity Preset Chips & Quick Print */}
+          <div className="bg-slate-800/90 p-4 rounded-2xl border border-slate-700/80 shadow-xl space-y-4">
+            <div>
+              <div className="flex items-center justify-between text-xs font-extrabold text-slate-300 mb-2.5">
+                <span className="flex items-center gap-1.5 text-cyan-300">
+                  <span className="bg-cyan-500/20 text-cyan-400 px-1.5 py-0.5 rounded text-[10px] font-black uppercase">FAST SELECT</span>
+                  Select Copies:
+                </span>
+                <span className="text-emerald-400 font-mono text-xs font-black">{printQty} {printQty === 1 ? 'copy' : 'copies'} selected</span>
+              </div>
+              
+              <div className="flex flex-wrap items-center gap-1.5">
+                {[1, 2, 4, 8, 12, 24, 48].map((num) => (
+                  <button
+                    key={num}
+                    onClick={() => setPrintQty(num)}
+                    className={`py-1.5 px-3 rounded-xl text-xs font-black transition-all border ${
+                      printQty === num
+                        ? 'bg-cyan-400 text-slate-950 border-cyan-300 shadow-md shadow-cyan-400/20 scale-105'
+                        : 'bg-slate-900/90 text-slate-300 border-slate-700/70 hover:bg-slate-700 hover:text-white'
+                    }`}
+                  >
+                    {num}x
+                  </button>
+                ))}
+                <div className="flex items-center gap-1 ml-auto bg-slate-900 px-2.5 py-1 rounded-xl border border-slate-700 text-xs">
+                  <span className="text-slate-400 font-bold">Qty:</span>
+                  <input
+                    type="number"
+                    min="1"
+                    max="500"
+                    value={printQty}
+                    onChange={(e) => setPrintQty(Math.max(1, parseInt(e.target.value) || 1))}
+                    className="w-12 bg-transparent text-white text-right font-mono font-bold focus:outline-none"
+                  />
+                </div>
+              </div>
+            </div>
 
+            {/* Action Buttons */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3 border-t border-slate-700/70">
+              <button
+                onClick={handleInstantQuickPrint}
+                className="w-full bg-gradient-to-r from-cyan-400 to-emerald-400 hover:from-cyan-300 hover:to-emerald-300 text-slate-950 font-black py-3.5 px-4 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 transition-all hover:scale-[1.01] active:scale-95"
+              >
+                <Zap className="w-4 h-4 fill-slate-950 text-slate-950" />
+                <span>⚡ Quick Print ({printQty}x Now)</span>
+              </button>
+
+              <button
+                onClick={() => onAddToPrintQueue(createCurrentShelfPayload(printQty))}
+                className="w-full bg-slate-700 hover:bg-slate-600 text-white font-bold py-3.5 px-4 rounded-xl border border-slate-600 flex items-center justify-center gap-2 transition-all hover:scale-[1.01] active:scale-95"
+              >
+                <Plus className="w-4 h-4 text-cyan-400" />
+                <span>Add to Queue ({printQty}x)</span>
+              </button>
+            </div>
+            
             <button
               onClick={onOpenPrintModal}
-              className="w-full bg-slate-800 hover:bg-slate-700 text-white font-semibold py-2.5 px-4 rounded-xl border border-slate-700 flex items-center justify-center gap-2 transition-all"
+              className="w-full bg-slate-900/80 hover:bg-slate-900 text-slate-400 hover:text-white font-semibold py-2 px-3 rounded-xl border border-slate-800 flex items-center justify-center gap-2 text-xs transition-all"
             >
-              <Printer className="w-4 h-4 text-emerald-400" />
-              Direct Print Shelf Tags Sheet
+              <Printer className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Open Print Engine / Batch Queue Manager</span>
             </button>
           </div>
 

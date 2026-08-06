@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Printer, X, Trash2, Plus, Minus, History, Layers, Clock, RotateCcw } from 'lucide-react';
+import { Printer, X, Trash2, Plus, Minus, History, Layers, Clock, RotateCcw, AlertCircle, CheckCircle2, FlaskConical, Info } from 'lucide-react';
 import BarcodeRenderer from './BarcodeRenderer';
 import { LABEL_PRESETS } from '../data/labelPresets';
 import { PRESET_LOGOS } from '../data/mockProducts';
@@ -22,6 +22,15 @@ export default function PrintPreviewModal({
   const [showCutLines, setShowCutLines] = useState(true);
   const [activeTab, setActiveTab] = useState('queue'); // 'queue' | 'history'
   const [filterType, setFilterType] = useState('ALL'); // 'ALL' | 'THERMAL' | 'SHEET'
+  const [isTestPrintMode, setIsTestPrintMode] = useState(false);
+
+  const handleTestPrint = () => {
+    setIsTestPrintMode(true);
+    setTimeout(() => {
+      window.print();
+      setTimeout(() => setIsTestPrintMode(false), 500);
+    }, 150);
+  };
 
   if (!isOpen) return null;
 
@@ -375,9 +384,41 @@ export default function PrintPreviewModal({
                 </div>
               </div>
 
-              {/* Bottom Print Section */}
+              {/* Bottom Print Section with Thermal Setup Guidance */}
               <div className="space-y-3 pt-4 border-t border-gray-200 mt-4">
-                <div className="flex items-center justify-between text-xs font-semibold text-gray-700">
+                {/* Printer Calibration & Setup Callout Box */}
+                <div className="bg-slate-900 text-slate-300 p-3.5 rounded-2xl border border-slate-800 shadow-inner space-y-2 text-xs">
+                  <div className="flex items-center justify-between font-black text-white text-xs pb-1 border-b border-slate-800">
+                    <span className="flex items-center gap-1.5 text-emerald-400">
+                      <CheckCircle2 className="w-4 h-4 shrink-0" />
+                      🖨️ Thermal Printer Checklist (Avoid Wasting Labels)
+                    </span>
+                    <button
+                      onClick={handleTestPrint}
+                      className="bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/40 font-black px-2.5 py-1 rounded-xl flex items-center gap-1 transition-all hover:scale-[1.02] text-[11px]"
+                    >
+                      <FlaskConical className="w-3.5 h-3.5 text-cyan-300" />
+                      🧪 1-Click Calibration Test Tag
+                    </button>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1 text-[11px] text-slate-300">
+                    <div className="bg-slate-800/80 p-2 rounded-xl border border-slate-700/60 flex items-start gap-1.5">
+                      <span className="text-cyan-400 font-extrabold text-xs">1.</span>
+                      <div><b>Paper Size:</b> Set to <i>{selectedPreset.name}</i> ({selectedPreset.dimensions.replace('"', 'in')}) in browser print window.</div>
+                    </div>
+                    <div className="bg-slate-800/80 p-2 rounded-xl border border-slate-700/60 flex items-start gap-1.5">
+                      <span className="text-cyan-400 font-extrabold text-xs">2.</span>
+                      <div><b>Margins:</b> Always set to <b>None / Minimum</b> so tags don't drift across thermal roll breaks.</div>
+                    </div>
+                    <div className="bg-slate-800/80 p-2 rounded-xl border border-slate-700/60 flex items-start gap-1.5">
+                      <span className="text-cyan-400 font-extrabold text-xs">3.</span>
+                      <div><b>Headers & Footers:</b> Uncheck (Turn OFF) so browser dates/URLs aren't printed across barcodes!</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between text-xs font-semibold text-gray-700 pt-1">
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
                       type="checkbox"
@@ -387,8 +428,8 @@ export default function PrintPreviewModal({
                     />
                     Show Dashed Cut Line Guides
                   </label>
-                  <span className="font-extrabold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full">
-                    {flattenedQueue.length} {selectedPreset.type === 'THERMAL' ? 'Thermal Tags' : 'Sheet Labels'}
+                  <span className="font-extrabold text-emerald-800 bg-emerald-100 px-3 py-1 rounded-full text-xs shadow-sm">
+                    {flattenedQueue.length} {selectedPreset.type === 'THERMAL' ? 'Thermal Tags Ready' : 'Sheet Labels Ready'}
                   </span>
                 </div>
 
@@ -397,12 +438,12 @@ export default function PrintPreviewModal({
                   disabled={flattenedQueue.length === 0}
                   className={`w-full font-black text-sm py-3.5 px-4 rounded-xl flex items-center justify-center gap-2.5 transition-all shadow-lg ${
                     flattenedQueue.length > 0
-                      ? 'bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-emerald-500/20 hover:scale-[1.01] active:scale-95'
+                      ? 'bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-slate-950 shadow-emerald-500/20 hover:scale-[1.01] active:scale-95'
                       : 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none'
                   }`}
                 >
-                  <Printer className="w-5 h-5" />
-                  Print & Archive ({flattenedQueue.length} Labels Now)
+                  <Printer className="w-5 h-5 text-slate-950" />
+                  <span>Print & Archive ({flattenedQueue.length} Labels Now)</span>
                 </button>
               </div>
 
@@ -533,7 +574,25 @@ export default function PrintPreviewModal({
           }
         `}</style>
 
-        {selectedPreset.paperSize === 'ROLL' ? (
+        {isTestPrintMode ? (
+          /* CALIBRATION DIAGNOSTIC PAGE */
+          <div className="thermal-page p-4 bg-white text-black flex flex-col justify-between items-center w-full box-border border-[4px] border-dashed border-black font-mono text-center" style={{ minHeight: `${Math.max(150, (selectedPreset.heightMm || 40) * 3.5)}px` }}>
+            <div className="font-black text-xs uppercase border-b-2 border-black w-full pb-1 tracking-widest">
+              *** THERMAL PRINTER CALIBRATION TEST ***
+            </div>
+            <div className="py-2 text-[11px] font-bold space-y-1.5 leading-snug">
+              <div className="text-sm font-black underline">MIDWEST TURF TECH DIAGNOSTICS</div>
+              <div>PRESET: {selectedPreset.name} ({selectedPreset.dimensions})</div>
+              <div>MARGIN CHECK: ZERO / MINIMUM SETTINGS</div>
+              <div className="bg-black text-white p-1 my-1 font-mono text-[10px] font-extrabold rounded">
+                [ IF BORDERS ARE CENTERED ON TAG, ALIGNMENT IS 100% OK ]
+              </div>
+            </div>
+            <div className="border-t-2 border-black w-full pt-1 text-[10px] font-black uppercase">
+              ✔️ READY TO PRINT PRODUCTION BATCH
+            </div>
+          </div>
+        ) : selectedPreset.paperSize === 'ROLL' ? (
           /* THERMAL ROLL SEQUENTIAL PRINTING */
           <div>
             {flattenedQueue.map((item, idx) => (
