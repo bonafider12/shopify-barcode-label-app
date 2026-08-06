@@ -232,9 +232,27 @@ export default function BackupRestoreModal({
               )}
             </div>
 
-            <p className="text-xs text-slate-300 leading-relaxed">
-              No downloading files! Click save below to instantly upload all your custom brand logos, presets, and products into a persistent cloud vault. You get a simple <b>1-Click Team Link</b> that automatically syncs any coworker or register computer!
-            </p>
+            {/* How-To Guide / Explanation */}
+            <div className="bg-slate-800/60 p-4 rounded-xl border border-slate-700/80 text-xs text-slate-300 space-y-2.5">
+              <div className="font-extrabold text-white flex items-center gap-1.5 text-xs">
+                <Sparkles className="w-4 h-4 text-cyan-400 shrink-0" />
+                <span>How do I get or use a Vault ID?</span>
+              </div>
+              <ul className="space-y-2 text-slate-300 text-[11px] leading-relaxed pl-1">
+                <li className="flex items-start gap-2">
+                  <span className="bg-emerald-500 text-slate-950 px-1.5 py-0.5 rounded font-extrabold text-[9px] shrink-0 mt-0.5 shadow-xs">NEW</span>
+                  <span>
+                    <b>Don't have an ID yet?</b> Simply click <b>"🚀 Save App to Cloud Now"</b> below! The app will automatically generate your permanent 7-character Vault ID instantly without any account needed.
+                  </span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="bg-cyan-500 text-slate-950 px-1.5 py-0.5 rounded font-extrabold text-[9px] shrink-0 mt-0.5 shadow-xs">SYNC</span>
+                  <span>
+                    <b>Connecting another computer or tablet?</b> Look at the computer where you already clicked Save—you'll see your Vault ID shown above under <i>Connected: [ID]</i>. Type or paste that exact ID into the box below and click <b>Connect</b>!
+                  </span>
+                </li>
+              </ul>
+            </div>
 
             {/* If connected, show share options */}
             {cloudVaultId && (
