@@ -52,19 +52,40 @@ export async function saveToCloudVault(workspaceData, existingVaultId = null) {
   const optimizedLogo = await optimizeLogoForCloud(workspaceData.customLogo);
 
   // To prevent HTTP 413 (Payload Too Large) on cloud storage bins (which cap around 50KB),
-  // we filter out massive raw Shopify product inventories that already auto-download from Shopify on every device anyway!
-  const customLocalProducts = (workspaceData.products || [])
-    .filter(p => !p.id || (!String(p.id).includes('shopify') && !String(p.id).includes('gid://')))
-    .slice(0, 50);
+  // we exclude standard demo items and Shopify catalogs (since every PC auto-downloads them from Shopify directly on boot!).
+  // Only purely manual local items (created in Catalog Manager with Date.now() timestamps like prod_17... or prod_18...) are retained.
+  const savedProducts = (workspaceData.products || []).filter(p => {
+    const strId = String(p.id || '');
+    return strId.startsWith('prod_17') || strId.startsWith('prod_18') || strId.startsWith('local_');
+  }).slice(0, 10);
 
-  // Cap print queue & print history to prevent historical logs from bloating the cloud storage
-  const cleanPrintQueue = (workspaceData.printQueue || []).slice(0, 30);
-  const cleanPrintHistory = (workspaceData.printHistory || []).slice(0, 20);
+  // Strip rich descriptions & image arrays from queue and history so they remain lightning-fast and ultra-compact (< 2KB)
+  const cleanPrintQueue = (workspaceData.printQueue || []).slice(0, 20).map(item => ({
+    id: item.id || Date.now(),
+    title: item.title ? item.title.slice(0, 80) : '',
+    price: item.price || '$0.00',
+    barcode: item.barcode || '',
+    sku: item.sku || '',
+    vendor: item.vendor ? item.vendor.slice(0, 40) : '',
+    variantTitle: item.variantTitle || '',
+    quantity: typeof item.quantity === 'number' ? item.quantity : 1
+  }));
+
+  const cleanPrintHistory = (workspaceData.printHistory || []).slice(0, 10).map(job => ({
+    id: job.id || Date.now(),
+    date: job.date || new Date().toLocaleString(),
+    totalLabels: job.totalLabels || 1,
+    queue: (job.queue || []).slice(0, 5).map(q => ({
+      title: q.title ? q.title.slice(0, 40) : '',
+      barcode: q.barcode || '',
+      quantity: q.quantity || 1
+    }))
+  }));
 
   const payloadObj = {
-    version: "2.1.0",
+    version: "2.2.0",
     updatedAt: new Date().toISOString(),
-    products: customLocalProducts,
+    products: savedProducts,
     printQueue: cleanPrintQueue,
     printHistory: cleanPrintHistory,
     customLogo: optimizedLogo || null,
@@ -73,7 +94,13 @@ export async function saveToCloudVault(workspaceData, existingVaultId = null) {
     shopifyClientId: workspaceData.shopifyClientId || null
   };
 
-  const payload = JSON.stringify(payloadObj);
+  let payload = JSON.stringify(payloadObj);
+
+  // Absolute safety cutoff: if payload is somehow still above 42KB (e.g. giant logo), drop logo to guarantee 100% cloud save success
+  if (payload.length > 42000) {
+    payloadObj.customLogo = null;
+    payload = JSON.stringify(payloadObj);
+  }
 
   // 1. Attempt upload through Vercel serverless proxy (/api/vault)
   try {
