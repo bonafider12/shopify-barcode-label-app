@@ -42,6 +42,7 @@ export default function ProductLabelStudio({
     borderStyle: borderStyle,
     customNote: customNote,
     fontStyle: fontStyle,
+    fontSize: fontSize,
     showPrice: showPrice,
     quantity: Number(qty) || 1
   });
@@ -63,6 +64,7 @@ export default function ProductLabelStudio({
   const [ecoBadge, setEcoBadge] = useState(selectedProduct?.ecoBadge || '');
   const [customNote, setCustomNote] = useState(selectedProduct?.customNote || 'Exp: 12/2026 • Lot #408A');
   const [fontStyle, setFontStyle] = useState('font-sans'); // font-sans | font-mono | font-serif
+  const [fontSize, setFontSize] = useState('text-xs'); // text-[10px] | text-xs | text-sm | text-base
 
   // Styling & Toggles
   const [accentColor, setAccentColor] = useState('#10b981'); // Emerald
@@ -344,11 +346,23 @@ export default function ProductLabelStudio({
               <select
                 value={fontStyle}
                 onChange={(e) => setFontStyle(e.target.value)}
-                className="w-full text-xs p-2 rounded-lg border border-gray-300 bg-white focus:ring-2 focus:ring-emerald-500 outline-none font-medium"
+                className="w-full text-xs p-2 rounded-lg border border-gray-300 bg-white focus:ring-2 focus:ring-emerald-500 outline-none font-medium mb-3"
               >
                 <option value="font-sans">Standard Modern (Clean Sans)</option>
                 <option value="font-mono">Industrial Warehouse (Monospaced)</option>
                 <option value="font-serif">Classic Retail (Elegant Serif)</option>
+              </select>
+
+              <label className="text-xs font-semibold text-gray-700 block mb-1">Base Font Size</label>
+              <select
+                value={fontSize}
+                onChange={(e) => setFontSize(e.target.value)}
+                className="w-full text-xs p-2 rounded-lg border border-gray-300 bg-white focus:ring-2 focus:ring-emerald-500 outline-none font-medium"
+              >
+                <option value="text-[10px]">Small (Condensed)</option>
+                <option value="text-xs">Normal (Standard)</option>
+                <option value="text-sm">Large (Prominent)</option>
+                <option value="text-base">Extra Large (Maximum)</option>
               </select>
             </div>
           </div>
@@ -470,11 +484,11 @@ export default function ProductLabelStudio({
               </div>
 
               {/* Product Info */}
-              <div className="space-y-1 my-1">
-                <div className="flex items-baseline justify-between gap-2">
-                  <h4 className="font-extrabold text-sm text-gray-900 leading-tight tracking-tight line-clamp-1">
-                    {productTitle || 'Product Name'}
-                  </h4>
+                <div className="p-3">
+                  <div className="flex justify-between items-start mb-2">
+                    <h4 className={`font-black ${fontSize === 'text-[10px]' ? 'text-xs' : fontSize === 'text-xs' ? 'text-sm' : fontSize === 'text-sm' ? 'text-base' : 'text-lg'} leading-tight text-gray-900 line-clamp-2 ${fontStyle}`}>
+                      {productTitle || 'Product Name'}
+                    </h4>
                   {showPrice && (
                     <div className="text-right shrink-0">
                       <span className="font-black text-base text-gray-900">

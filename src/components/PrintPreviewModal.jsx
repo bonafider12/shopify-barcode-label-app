@@ -503,7 +503,7 @@ export default function PrintPreviewModal({
                       </div>
 
                       {/* Title */}
-                      <div className={`font-extrabold text-gray-900 line-clamp-1 leading-tight my-1 ${item.fontStyle || ''}`}>
+                      <div className={`font-extrabold text-gray-900 line-clamp-1 leading-tight my-1 ${item.fontSize || 'text-xs'} ${item.fontStyle || ''}`}>
                         {item.title || item.product?.title || 'Product Label'}
                       </div>
                       {item.customNote && selectedPreset.columns !== 4 && (
@@ -621,7 +621,7 @@ export default function PrintPreviewModal({
                   {renderLogo(item)}
                   {item.showPrice !== false && <span className="font-black text-sm">${Number(item.price).toFixed(2)}</span>}
                 </div>
-                <div className={`font-extrabold text-xs text-center line-clamp-1 my-1 w-full ${item.fontStyle || ''}`}>{item.title || item.product?.title}</div>
+                <div className={`font-extrabold text-center line-clamp-1 my-1 w-full ${item.fontSize || 'text-xs'} ${item.fontStyle || ''}`}>{item.title || item.product?.title}</div>
                 {item.customNote && (
                   <div className="text-[10px] font-mono font-bold text-gray-800 my-0.5 text-center w-full truncate">
                     {item.customNote}
@@ -667,7 +667,7 @@ export default function PrintPreviewModal({
                   {selectedPreset.columns !== 4 && renderLogo(item)}
                   {item.showPrice !== false && <span className="font-extrabold text-xs">${Number(item.price).toFixed(2)}</span>}
                 </div>
-                <div className={`font-bold text-xs line-clamp-1 text-gray-900 ${item.fontStyle || ''}`}>{item.title || item.product?.title}</div>
+                <div className={`font-bold line-clamp-1 text-gray-900 ${item.fontSize || 'text-xs'} ${item.fontStyle || ''}`}>{item.title || item.product?.title}</div>
                 {selectedPreset.columns !== 4 && (
                   <div className="text-[10px] text-gray-600 truncate">{item.variant || item.product?.variant || item.sku}</div>
                 )}

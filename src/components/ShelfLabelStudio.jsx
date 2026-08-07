@@ -36,6 +36,7 @@ export default function ShelfLabelStudio({
     selectedPresetId: selectedPresetId,
     isShelfTalker: true,
     showPrice: showPrice,
+    fontSize: fontSize,
     quantity: Number(qty) || 1
   });
 
@@ -65,6 +66,7 @@ export default function ShelfLabelStudio({
 
   // Multi-Purpose QR Action State
   const [qrMode, setQrMode] = useState('URL'); // 'URL' | 'MANUAL' | 'WIFI' | 'SMS' | 'EMAIL'
+  const [fontSize, setFontSize] = useState('text-sm'); // text-xs | text-sm | text-base | text-lg
   const [qrLabel, setQrLabel] = useState('Scan Specs');
   const [manualUrl, setManualUrl] = useState('https://manuals.midwestturftech.com/parts-diagram.pdf');
   const [wifiSsid, setWifiSsid] = useState('MidwestTurf-Guest');
@@ -277,16 +279,28 @@ export default function ShelfLabelStudio({
             </div>
 
             <div>
-              <label className="text-xs font-semibold text-gray-700 block mb-1">Header Theme</label>
+              <label className="text-xs font-semibold text-gray-700 block mb-1">Color Theme</label>
               <select
                 value={headerTheme}
                 onChange={(e) => setHeaderTheme(e.target.value)}
-                className="w-full text-xs p-2 rounded-lg border border-gray-300 bg-white focus:ring-2 focus:ring-emerald-500 outline-none"
+                className="w-full text-xs p-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-emerald-500 outline-none mb-3"
               >
-                <option value="dark-emerald">Dark Emerald (Retail Standard)</option>
-                <option value="crimson-sale">Crimson Red (Sale / Promo)</option>
-                <option value="amber-gold">Amber Gold (Premium / Organic)</option>
-                <option value="midnight-navy">Midnight Navy (Clean Modern)</option>
+                <option value="dark-emerald">Dark Emerald (Default)</option>
+                <option value="crimson-sale">Crimson Red (Sale)</option>
+                <option value="amber-gold">Amber Gold (Clearance)</option>
+                <option value="slate-dark">Slate Dark (Modern)</option>
+              </select>
+
+              <label className="text-xs font-semibold text-gray-700 block mb-1">Base Font Size</label>
+              <select
+                value={fontSize}
+                onChange={(e) => setFontSize(e.target.value)}
+                className="w-full text-xs p-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-emerald-500 outline-none"
+              >
+                <option value="text-xs">Small (Condensed)</option>
+                <option value="text-sm">Normal (Standard)</option>
+                <option value="text-base">Large (Prominent)</option>
+                <option value="text-lg">Extra Large (Maximum)</option>
               </select>
             </div>
           </div>
@@ -578,7 +592,7 @@ export default function ShelfLabelStudio({
 
               {/* Body Content */}
               <div className="p-3.5 space-y-2">
-                <h3 className="font-black text-sm text-gray-900 leading-snug tracking-tight">
+                <h3 className={`font-black ${fontSize === 'text-xs' ? 'text-sm' : fontSize === 'text-sm' ? 'text-base' : fontSize === 'text-base' ? 'text-lg' : 'text-xl'} text-gray-900 leading-snug tracking-tight`}>
                   {productTitle}
                 </h3>
                 <p className="text-[11px] text-gray-500 font-medium">{variantName}</p>
