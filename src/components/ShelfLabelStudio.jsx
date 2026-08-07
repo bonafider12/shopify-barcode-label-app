@@ -35,6 +35,7 @@ export default function ShelfLabelStudio({
     customLogo: customLogo,
     selectedPresetId: selectedPresetId,
     isShelfTalker: true,
+    showPrice: showPrice,
     quantity: Number(qty) || 1
   });
 
@@ -58,6 +59,7 @@ export default function ShelfLabelStudio({
   // Styling
   const [headerTheme, setHeaderTheme] = useState('dark-emerald');
   const [showQR, setShowQR] = useState(true);
+  const [showPrice, setShowPrice] = useState(true);
   const [showUnitPrice, setShowUnitPrice] = useState(true);
   const [showCompareSave, setShowCompareSave] = useState(true);
 
@@ -208,7 +210,13 @@ export default function ShelfLabelStudio({
             </div>
 
             <div>
-              <label className="text-xs font-semibold text-gray-700 block mb-1">Shelf Price ($)</label>
+              <div className="flex justify-between items-center mb-1">
+                <label className="text-xs font-semibold text-gray-700 block">Shelf Price ($)</label>
+                <label className="text-[10px] font-semibold text-gray-500 flex items-center gap-1 cursor-pointer">
+                  <input type="checkbox" checked={showPrice} onChange={(e) => setShowPrice(e.target.checked)} className="accent-emerald-600 rounded" />
+                  Show
+                </label>
+              </div>
               <input
                 type="number"
                 step="0.01"
@@ -576,33 +584,35 @@ export default function ShelfLabelStudio({
                 <p className="text-[11px] text-gray-500 font-medium">{variantName}</p>
 
                 {/* Massive Price Section */}
-                <div className="flex items-end justify-between my-2 pt-1 border-t border-b border-gray-100 pb-2">
-                  <div>
-                    <div className="flex items-baseline gap-2">
-                      <span className="text-3xl font-black tracking-tight text-gray-900 leading-none">
-                        ${Number(price).toFixed(2)}
-                      </span>
-                      {compareAtPrice && compareAtPrice > price && (
-                        <span className="text-xs text-gray-400 line-through font-semibold">
-                          ${Number(compareAtPrice).toFixed(2)}
+                {showPrice && (
+                  <div className="flex items-end justify-between my-2 pt-1 border-t border-b border-gray-100 pb-2">
+                    <div>
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-3xl font-black tracking-tight text-gray-900 leading-none">
+                          ${Number(price).toFixed(2)}
+                        </span>
+                        {compareAtPrice && compareAtPrice > price && (
+                          <span className="text-xs text-gray-400 line-through font-semibold">
+                            ${Number(compareAtPrice).toFixed(2)}
+                          </span>
+                        )}
+                      </div>
+                      {showUnitPrice && unitPrice && (
+                        <span className="text-[10px] font-bold text-gray-500 block mt-1">
+                          UNIT PRICE: {unitPrice}
                         </span>
                       )}
                     </div>
-                    {showUnitPrice && unitPrice && (
-                      <span className="text-[10px] font-bold text-gray-500 block mt-1">
-                        UNIT PRICE: {unitPrice}
-                      </span>
+
+                    {/* Savings Discount Badge */}
+                    {getSavingsAmount() && (
+                      <div className="bg-rose-600 text-white text-right px-2 py-1 rounded-lg">
+                        <span className="text-[9px] font-bold block uppercase leading-tight">SAVE</span>
+                        <span className="text-xs font-black leading-tight">${getSavingsAmount()}</span>
+                      </div>
                     )}
                   </div>
-
-                  {/* Savings Discount Badge */}
-                  {getSavingsAmount() && (
-                    <div className="bg-rose-600 text-white text-right px-2 py-1 rounded-lg">
-                      <span className="text-[9px] font-bold block uppercase leading-tight">SAVE</span>
-                      <span className="text-xs font-black leading-tight">${getSavingsAmount()}</span>
-                    </div>
-                  )}
-                </div>
+                )}
 
                 {/* Footer: Location Tag & QR Code */}
                 <div className="flex items-center justify-between pt-1 gap-2">

@@ -495,7 +495,7 @@ export default function PrintPreviewModal({
                       {/* Header */}
                       <div className="flex items-center justify-between gap-1">
                         {selectedPreset.columns !== 4 && renderLogo(item)}
-                        {item.price && (
+                        {item.showPrice !== false && item.price && (
                           <span className="font-black text-[10px] text-gray-900 bg-emerald-50 px-1 py-0.2 rounded border border-emerald-100">
                             ${Number(item.price).toFixed(2)}
                           </span>
@@ -619,7 +619,7 @@ export default function PrintPreviewModal({
               >
                 <div className="flex items-center justify-between w-full pb-1 border-b border-gray-300">
                   {renderLogo(item)}
-                  <span className="font-black text-sm">${Number(item.price).toFixed(2)}</span>
+                  {item.showPrice !== false && <span className="font-black text-sm">${Number(item.price).toFixed(2)}</span>}
                 </div>
                 <div className={`font-extrabold text-xs text-center line-clamp-1 my-1 w-full ${item.fontStyle || ''}`}>{item.title || item.product?.title}</div>
                 {item.customNote && (
@@ -665,7 +665,7 @@ export default function PrintPreviewModal({
               >
                 <div className="flex items-center justify-between gap-1">
                   {selectedPreset.columns !== 4 && renderLogo(item)}
-                  <span className="font-extrabold text-xs">${Number(item.price).toFixed(2)}</span>
+                  {item.showPrice !== false && <span className="font-extrabold text-xs">${Number(item.price).toFixed(2)}</span>}
                 </div>
                 <div className={`font-bold text-xs line-clamp-1 text-gray-900 ${item.fontStyle || ''}`}>{item.title || item.product?.title}</div>
                 {selectedPreset.columns !== 4 && (

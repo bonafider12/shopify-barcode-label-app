@@ -42,6 +42,7 @@ export default function ProductLabelStudio({
     borderStyle: borderStyle,
     customNote: customNote,
     fontStyle: fontStyle,
+    showPrice: showPrice,
     quantity: Number(qty) || 1
   });
 
